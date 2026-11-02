@@ -1,0 +1,17 @@
+{
+  "name": "pdcaai",
+  "version": "0.1.0",
+  "description": "100点だと思っている自分の成果物を疑い、自分の頭で110点へ進めるAIストレッチ",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/server.js",
+    "demo": "node src/server.js --provider=mock",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.3.0"
+  }
+}

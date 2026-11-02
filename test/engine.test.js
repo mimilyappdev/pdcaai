@@ -1,0 +1,87 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { Engine, InputError, calibration, publicView, quoteExists } from '../src/engine.js';
+import { mockProvider } from '../src/providers.js';
+import { MemoryStore } from '../src/store.js';
+
+const work = { name: '在庫メモ', audience: '即売会の出展者', belief: '好評だから完成', evidence: '友人3人が褒めた' };
+const answers = {
+  newcomer: '説明なしだと最初の登録で止まるかもしれない。',
+  numbers: '褒めた3人しか見ていない。開始した人を数えていない。',
+  opponent: '紙の表で足りている人がいそう。',
+  own_idea: '登録の前に見本データで会計を一度体験させる',
+};
+
+async function ready(provider = mockProvider()) {
+  const engine = new Engine({ store: new MemoryStore(), provider, now: () => new Date('2026-11-03T00:00:00Z') });
+  const s = await engine.create(work);
+  await engine.assumptions(s.id);
+  await Promise.all(['newcomer', 'numbers', 'opponent'].map((r) => engine.reviewer(s.id, r)));
+  return { engine, id: s.id };
+}
+
+test('回答前は封印された見立てをAPIの返却に含めない', async () => {
+  const { engine, id } = await ready();
+  const view = await engine.reviewer(id, 'numbers');
+  assert.equal(view.sealed_view, undefined);
+  const full = publicView(await engine.require(id));
+  assert.equal(JSON.stringify(full).includes('声が届いた人だけ'), false);
+});
+
+test('回答後に封印が開き、並列で作った問いが全て残る', async () => {
+  const { engine, id } = await ready();
+  const view = await engine.submitAnswers(id, answers);
+  for (const r of ['newcomer', 'numbers', 'opponent']) assert.ok(view.reviewers[r].sealed_view);
+});
+
+test('本人の文章にない引用は加点しない', async () => {
+  const fake = mockProvider();
+  const original = fake.generate;
+  fake.generate = async (req) => {
+    const out = await original(req);
+    if (out.doubted) out.doubted = { met: true, evidence_quote: '本人が書いていない立派な文章です', note: '' };
+    return out;
+  };
+  const { engine, id } = await ready(fake);
+  const view = await engine.submitAnswers(id, answers);
+  assert.equal(view.check.doubted.met, false);
+  assert.equal(view.stretch.items.find((i) => i.key === 'doubted').met, false);
+});
+
+test('引用の確認は空白の違いを無視し、短すぎる引用は認めない', () => {
+  assert.equal(quoteExists('開始した人を 数えて', '開始した人を数えていない'), true);
+  assert.equal(quoteExists('人', '開始した人'), false);
+  assert.equal(quoteExists('', 'abc'), false);
+});
+
+test('4項目で110になり、確認日が来ると結果待ちに出る', async () => {
+  const { engine, id } = await ready();
+  await engine.submitAnswers(id, answers);
+  const view = await engine.submitAct(id, {
+    belief: '説明なしで使える', action: '初見の1人を観察する', signal: '30秒で止まる', confidence: 90, checkDate: '2026-11-03',
+  });
+  assert.equal(view.stretch.total, 110);
+  const ledger = await engine.ledger();
+  assert.equal(ledger.due.length, 1);
+  await engine.submitResult(id, { outcome: 'broken', note: '登録で止まった' });
+  const after = await engine.ledger();
+  assert.equal(after.due.length, 0);
+  assert.deepEqual(
+    [after.calibration.resolved, after.calibration.heldRate, after.calibration.avgConfidence],
+    [1, 0, 90],
+  );
+});
+
+test('順番を飛ばす操作と不正な入力を拒否する', async () => {
+  const { engine, id } = await ready();
+  await assert.rejects(engine.submitAct(id, {}), InputError);
+  await assert.rejects(engine.submitAnswers(id, { ...answers, own_idea: ' ' }), InputError);
+  await assert.rejects(engine.reviewer(id, '__proto__'), InputError);
+  await assert.rejects(engine.create({ ...work, belief: 'x'.repeat(2001) }), InputError);
+});
+
+test('calibrationは不明を母数から除く', () => {
+  const s = (outcome, confidence) => ({ act: { confidence, result: { outcome } } });
+  const c = calibration([s('held', 80), s('broken', 100), s('unclear', 50)]);
+  assert.deepEqual([c.resolved, c.held, c.heldRate, c.avgConfidence], [2, 1, 50, 90]);
+});
