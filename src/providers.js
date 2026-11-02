@@ -67,6 +67,10 @@ function runClaude(args, input) {
       child.kill();
       reject(new Error('Claude Codeの応答が3分を超えました'));
     }, 180_000);
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    // 子プロセスが入力を読まずに終了しても、サーバーを落とさない。
+    child.stdin.on('error', () => {});
     child.stdout.on('data', (d) => { stdout += d; });
     child.stderr.on('data', (d) => { stderr += d; });
     child.on('error', (e) => { clearTimeout(timer); reject(new Error(`Claude Codeを起動できません: ${e.message}`)); });

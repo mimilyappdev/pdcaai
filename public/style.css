@@ -70,6 +70,7 @@ button.ghost, .button.ghost { color: var(--ink); background: transparent; border
 .proof b.met::before { content: "+2.5 "; color: var(--accent); }
 .proof b.miss { color: var(--sub); }
 .proof blockquote { margin: 4px 0 0; padding-left: 10px; border-left: 3px solid var(--accent); color: var(--sub); font-size: 14px; }
+.shift-num { font-size: 32px; font-weight: 800; margin: 0; font-variant-numeric: tabular-nums; }
 .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
 .stat { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }

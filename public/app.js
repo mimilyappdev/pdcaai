@@ -106,9 +106,10 @@ function newSession(previousId, previousName) {
     h('h2', {}, '何を「もう完成」と思っていますか？'),
     previousName ? h('p', { class: 'muted' }, `前回の「${previousName}」の結果から続けます。`) : null,
     form(async (data) => {
-      const s = await api('sessions', { ...data, previousId });
+      const s = await api('sessions', { ...data, confidenceBefore: Number(data.confidenceBefore), previousId });
       location.hash = `#/s/${s.id}`;
     },
+    percentField('今、この成果物は何点ですか？', 'confidenceBefore', 100, 0),
     field('作ったもの', 'name', { type: 'text', maxlength: 100, value: previousName ?? '', hint: 'ツール、記事、商品、企画など' }),
     field('届けたい相手', 'audience', { type: 'text', maxlength: 200, hint: 'なるべく一人の顔が浮かぶように' }),
     field('100点だと思う理由', 'belief', { maxlength: 2000 }),
@@ -123,6 +124,21 @@ async function session(id) {
   if (s.act) return actDone(s);
   if (s.check) return checkView(s);
   return doView(s);
+}
+
+// 生成の途中で失敗して再読み込みしても、書いた回答を失わない。
+function keepDraft(el, id) {
+  const read = () => {
+    try { return JSON.parse(localStorage.getItem(DRAFT_PREFIX + id) || '{}'); } catch { return {}; }
+  };
+  const saved = read()[el.name];
+  if (saved) el.value = saved;
+  el.addEventListener('input', () => {
+    try {
+      localStorage.setItem(DRAFT_PREFIX + id, JSON.stringify({ ...read(), [el.name]: el.value }));
+    } catch { /* 保存できなくても入力は続ける */ }
+  });
+  return el;
 }
 
 async function doView(s) {
@@ -149,7 +165,7 @@ async function doView(s) {
       slots[role].replaceChildren(
         h('span', { class: 'who' }, r.label),
         h('p', { class: 'question' }, r.question),
-        h('label', {}, '自分の言葉で答える', h('textarea', { name: role, required: true, maxlength: 4000, form: 'answers' })),
+        h('label', {}, '自分の言葉で答える', keepDraft(h('textarea', { name: role, required: true, maxlength: 4000, form: 'answers' }), s.id)),
         h('div', { class: 'seal locked' }, '封印中: 答えたあとで、この人の見立てが開きます'),
       );
       return r;
@@ -166,19 +182,7 @@ async function doView(s) {
     h('button', { type: 'submit' }, '答えて封印を開く'));
     f.id = 'answers';
     answerForm.append(f);
-    for (const el of app.querySelectorAll('textarea')) {
-      let saved = {};
-      try { saved = JSON.parse(localStorage.getItem(DRAFT_PREFIX + s.id) || '{}'); } catch { /* 下書きなし */ }
-      if (saved[el.name]) el.value = saved[el.name];
-      el.addEventListener('input', () => {
-        let now = {};
-        try {
-          now = JSON.parse(localStorage.getItem(DRAFT_PREFIX + s.id) || '{}');
-          now[el.name] = el.value;
-          localStorage.setItem(DRAFT_PREFIX + s.id, JSON.stringify(now));
-        } catch { /* 保存できなくても入力は続ける */ }
-      });
-    }
+    keepDraft(f.querySelector('textarea[name=own_idea]'), s.id);
   } catch (ex) {
     err.textContent = `${ex.message} 再読み込みすると続きからやり直せます。`;
     err.hidden = false;
@@ -218,9 +222,10 @@ function revealCards(s) {
 }
 
 function checkView(s) {
-  const today = new Date();
-  today.setDate(today.getDate() + 7);
-  const week = today.toISOString().slice(0, 10);
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  const pad = (n) => String(n).padStart(2, '0');
+  const week = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   show(
     steps(3),
     h('h2', {}, '封印を開きました'),
@@ -231,22 +236,23 @@ function checkView(s) {
     h('h2', {}, '小さく試す'),
     h('p', { class: 'lead' }, 'ここはあなたが書きます。AIは行動を決めません。'),
     form(async (data) => {
-      await api(`sessions/${s.id}/act`, { ...data, confidence: Number(data.confidence) });
+      await api(`sessions/${s.id}/act`, { ...data, confidence: Number(data.confidence), confidenceAfter: Number(data.confidenceAfter) });
       await session(s.id);
     },
     field('確かめる前提', 'belief', { hint: '1つに絞ってください', type: 'text', maxlength: 2000 }),
     field('30分以内に試すこと', 'action', { type: 'text', maxlength: 2000 }),
     field('外れたと判断する基準', 'signal', { type: 'text', maxlength: 2000, hint: '試す前に決めておきます' }),
-    confidenceField(),
+    percentField('開封した今、この成果物は何点ですか？', 'confidenceAfter', s.confidenceBefore, 0),
+    percentField('確かめる前提が正しい確信度', 'confidence', 80, 50),
     field('結果を確かめる日', 'checkDate', { type: 'date', value: week }),
     h('button', { type: 'submit' }, '台帳に載せて110へ')),
   );
 }
 
-function confidenceField() {
-  const out = h('output', {}, '80');
-  return h('label', {}, 'この前提が正しい確信度: ', out, '%',
-    h('input', { type: 'range', name: 'confidence', min: 50, max: 100, step: 5, value: 80, oninput: (e) => { out.textContent = e.target.value; } }));
+function percentField(label, name, value, min) {
+  const out = h('output', {}, String(value));
+  return h('label', {}, `${label} `, out,
+    h('input', { type: 'range', name, min, max: 100, step: 5, value, oninput: (e) => { out.textContent = e.target.value; } }));
 }
 
 function actDone(s) {
@@ -270,6 +276,9 @@ function actDone(s) {
     steps(3),
     h('h2', {}, `「${s.work.name}」の周回`),
     gauge(s.stretch),
+    h('section', { class: 'card shift' },
+      h('h3', {}, '自分でつけた点数の変化'),
+      h('p', { class: 'shift-num' }, `${s.confidenceBefore} → ${a.confidenceAfter}`)),
     h('section', { class: 'card' },
       h('h3', {}, '賭けた前提'), h('p', {}, `${a.belief}（確信度 ${a.confidence}%）`),
       h('h3', {}, '試すこと'), h('p', {}, a.action),

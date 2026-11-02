@@ -5,6 +5,12 @@ export class InputError extends Error {}
 
 const LIMITS = { name: 100, audience: 200, belief: 2000, evidence: 2000, material: 20000, answer: 4000 };
 
+function percent(value, label) {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 0 || n > 100) throw new InputError(`${label}は0〜100で入力してください`);
+  return n;
+}
+
 function text(value, label, max, { required = true } = {}) {
   const v = typeof value === 'string' ? value.trim() : '';
   if (required && !v) throw new InputError(`${label}を入力してください`);
@@ -14,7 +20,7 @@ function text(value, label, max, { required = true } = {}) {
 
 // 引用が本人の文章に実在するときだけ認める。空白の差は無視する。
 export function quoteExists(quote, source) {
-  const normalize = (s) => s.replace(/\s+/g, '');
+  const normalize = (s) => s.replace(/\s+/g, '').replace(/＜/g, '<').replace(/＞/g, '>');
   const q = normalize(quote ?? '');
   return q.length >= 4 && normalize(source).includes(q);
 }
@@ -54,6 +60,15 @@ export class Engine {
     this.store = store;
     this.provider = provider;
     this.now = now;
+    this.running = new Map();
+  }
+
+  // 同じ生成の二重実行を防ぎ、再読み込みや二度押しでは進行中の結果を共有する。
+  once(key, work) {
+    if (!this.running.has(key)) {
+      this.running.set(key, work().finally(() => this.running.delete(key)));
+    }
+    return this.running.get(key);
   }
 
   async create(input) {
@@ -69,6 +84,8 @@ export class Engine {
         evidence: text(input.evidence, 'そう思う根拠', LIMITS.evidence),
         material: text(input.material, '補足資料', LIMITS.material, { required: false }),
       },
+      // AIの問いを見る前の自信。開封後の自信と比べる。
+      confidenceBefore: percent(input.confidenceBefore, '今の自信'),
       assumptions: [],
       reviewers: {},
       answers: null,
@@ -86,21 +103,30 @@ export class Engine {
   }
 
   async assumptions(id) {
-    const s = await this.require(id);
-    if (s.assumptions.length) return publicView(s);
-    const out = await this.provider.generate({ ...assumptionsPrompt(s), effort: 'medium' });
-    if (!Array.isArray(out.assumptions) || !out.assumptions.length) throw new Error('前提を取り出せませんでした');
-    s.assumptions = out.assumptions.slice(0, 4).map((a, i) => ({ id: `a${i + 1}`, ...a }));
-    await this.store.put(s);
-    return publicView(s);
+    return this.once(`${id}:assumptions`, async () => {
+      const s = await this.require(id);
+      if (s.assumptions.length) return publicView(s);
+      const out = await this.provider.generate({ ...assumptionsPrompt(s), effort: 'medium' });
+      if (!Array.isArray(out.assumptions) || !out.assumptions.length) throw new Error('前提を取り出せませんでした');
+      s.assumptions = out.assumptions.slice(0, 4).map((a, i) => ({ id: `a${i + 1}`, ...a }));
+      await this.store.put(s);
+      return publicView(s);
+    });
   }
 
   async reviewer(id, role) {
     if (!Object.hasOwn(ROLES, role)) throw new InputError('不明な役割です');
+    return this.once(`${id}:${role}`, () => this.generateReviewer(id, role));
+  }
+
+  async generateReviewer(id, role) {
     const s = await this.require(id);
     if (!s.assumptions.length) throw new InputError('先に前提を取り出してください');
     if (!s.reviewers[role]) {
-      const out = await this.provider.generate({ ...reviewerPrompt(s, role), effort: 'medium' });
+      const request = { ...reviewerPrompt(s, role), effort: 'medium' };
+      let out = await this.provider.generate(request);
+      // 長い問いは一度だけ作り直す。
+      if ((out.question ?? '').length > 60) out = await this.provider.generate(request);
       // 並列実行中の他の役割を消さないよう、保存直前に読み直す。
       const latest = await this.require(id);
       latest.reviewers[role] = out;
@@ -110,7 +136,11 @@ export class Engine {
     return publicView(s).reviewers[role];
   }
 
-  async submitAnswers(id, input) {
+  submitAnswers(id, input) {
+    return this.once(`${id}:answers`, () => this.checkAnswers(id, input));
+  }
+
+  async checkAnswers(id, input) {
     const s = await this.require(id);
     if (s.check) return publicView(s);
     for (const role of Object.keys(ROLES)) {
@@ -143,6 +173,7 @@ export class Engine {
       action: text(input.action, '試すこと', LIMITS.belief),
       signal: text(input.signal, '外れたと判断する基準', LIMITS.belief),
       confidence,
+      confidenceAfter: percent(input.confidenceAfter, '開封後の自信'),
       checkDate,
       result: s.act?.result ?? null,
     };
@@ -165,7 +196,9 @@ export class Engine {
 
   async ledger() {
     const sessions = (await this.store.all()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    const today = this.now().toISOString().slice(0, 10);
+    const now = this.now();
+    const pad = (n) => String(n).padStart(2, '0');
+    const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
     return {
       calibration: calibration(sessions),
       due: sessions

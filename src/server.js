@@ -18,16 +18,21 @@ function send(res, status, body) {
 
 async function readJson(req) {
   if (!(req.headers['content-type'] ?? '').startsWith('application/json')) throw new InputError('JSONで送信してください');
-  let raw = '';
+  const chunks = [];
+  let size = 0;
   for await (const chunk of req) {
-    raw += chunk;
-    if (raw.length > MAX_BODY) throw new InputError('入力が長すぎます');
+    size += chunk.length;
+    if (size > MAX_BODY) throw new InputError('入力が長すぎます');
+    chunks.push(chunk);
   }
+  let body;
   try {
-    return raw ? JSON.parse(raw) : {};
+    body = chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {};
   } catch {
     throw new InputError('JSONを読み取れません');
   }
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) throw new InputError('JSONの形式が正しくありません');
+  return body;
 }
 
 async function route(engine, req, res, providerName) {
