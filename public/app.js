@@ -87,7 +87,7 @@ async function home() {
     ledger.sessions.length
       ? h('ul', { class: 'list' }, ledger.sessions.map((s) => h('li', {},
         h('a', { href: `#/s/${s.id}` }, s.name), ` ${s.total}`,
-        h('div', { class: 'muted' }, s.createdAt.slice(0, 10), s.act?.result ? ` / ${outcomeLabel(s.act.result.outcome)}` : ''))))
+        h('div', { class: 'muted' }, new Date(s.createdAt).toLocaleDateString('ja-JP'), s.act?.result ? ` / ${outcomeLabel(s.act.result.outcome)}` : ''))))
       : h('p', { class: 'muted' }, 'まだ記録はありません。記録はこのPCの中だけに保存します。'),
   );
 }
