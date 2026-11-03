@@ -7,10 +7,10 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const LENSES = {
-  'first-timer': '初見の客',
-  breaker: '壊し屋',
-  'money-ops': 'お金と運用',
-  misreading: '読み違い',
+  'first-timer': '新入社員',
+  breaker: 'リスク管理',
+  'money-ops': '経理',
+  misreading: '確認係',
 };
 
 const WINDOW = 3;

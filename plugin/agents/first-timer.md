@@ -1,6 +1,6 @@
 ---
 name: first-timer
-description: pdcaai の観点役「初見の客」。作るものの説明を受け取り、初めて触る人が迷う・止まる・誤解する点を最大3つ挙げる。pdcaai スキルから並列で呼ぶ。
+description: pdcaai のAI社員「新入社員」。作るものの説明を受け取り、初めて触る人が迷う・止まる・誤解する点を最大3つ挙げる。pdcaai スキルから並列で呼ぶ。
 tools: Read, Grep, Glob
 model: sonnet
 ---

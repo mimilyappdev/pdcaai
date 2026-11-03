@@ -1,6 +1,6 @@
 ---
 name: misreading
-description: pdcaai の観点役「読み違い」。作るものの説明を受け取り、人によって読み方が分かれる言葉や、伝わっていない前提を最大3つ挙げる。pdcaai スキルから並列で呼ぶ。
+description: pdcaai のAI社員「確認係」。作るものの説明を受け取り、引継ぎ先の理解が誤らないように、読み方が分かれる言葉や伝わっていない前提を最大3つ挙げる。pdcaai スキルから並列で呼ぶ。
 tools: Read, Grep, Glob
 model: sonnet
 ---
