@@ -19,7 +19,7 @@ function transcript(s) {
 }
 
 function previousBlock(s) {
-  return s.previousResult ? `<previous>\n前回確かめた前提と結果: ${safe(s.previousResult)}\n</previous>\n\n` : '';
+  return s.previousResult ? `<previous>\n前回の周回: ${safe(s.previousResult)}\n</previous>\n\n` : '';
 }
 
 const MODE_RULES = {

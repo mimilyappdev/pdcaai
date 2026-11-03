@@ -308,6 +308,7 @@ async function openedView(s) {
     h('section', { class: 'card' }, proofList(s.stretch)),
     h('h2', {}, '小さく試す'),
     actBox,
+    h('p', {}, h('button', { class: 'ghost', type: 'button', onclick: () => continueFrom(s) }, '実験は決めずに続きを話す')),
   );
   const draftForm = (draft) => form(async (data) => {
     await api(`sessions/${s.id}/act`, { ...data, confidence: Number(data.confidence), confidenceAfter: Number(data.confidenceAfter) });
@@ -328,13 +329,18 @@ async function openedView(s) {
   }
 }
 
+function continueFrom(s) {
+  window.scrollTo(0, 0);
+  newSession(s.id, s.title);
+}
+
 function actDone(s) {
   const a = s.act;
   const resultBlock = a.result
     ? h('section', { class: 'card' },
       h('h3', {}, `結果: ${outcomeLabel(a.result.outcome)}`),
       h('p', {}, a.result.note),
-      h('p', {}, h('button', { class: 'ghost', type: 'button', onclick: () => { window.scrollTo(0, 0); newSession(s.id, s.title); } }, 'この結果から次の周回へ')))
+      h('p', {}, h('button', { class: 'ghost', type: 'button', onclick: () => continueFrom(s) }, 'この結果から次の周回へ')))
     : h('section', { class: 'card' }, h('h3', {}, '結果を記録する'), form(async (data) => {
       await api(`sessions/${s.id}/result`, data);
       await session(s.id);
@@ -359,7 +365,10 @@ function actDone(s) {
     resultBlock,
     h('section', { class: 'card' }, proofList(s.stretch)),
     viewCards(s),
-    h('p', {}, h('a', { class: 'button ghost', href: '#/' }, '台帳へ戻る')),
+    h('p', {},
+      a.result ? null : h('button', { class: 'ghost', type: 'button', onclick: () => continueFrom(s) }, 'この続きを話す'),
+      ' ',
+      h('a', { class: 'button ghost', href: '#/' }, '台帳へ戻る')),
   );
 }
 

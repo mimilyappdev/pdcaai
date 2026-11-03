@@ -173,6 +173,18 @@ test('結果から次の周回へ枝が伸び、根は下に並ぶ', async () =>
   assert.ok(layout.nodes.find((n) => n.id === `${next.id}/root`).depth >= 2);
 });
 
+test('結果が出る前でも続きの周回をつなげ、前回の最後の問いを引き継ぐ', async () => {
+  const { engine, id } = await ready();
+  await engine.open(id);
+  await engine.submitAct(id, act);
+  const next = await engine.create({ confidenceBefore: 70, previousId: id });
+  assert.ok(next.previousResult.includes('結果はまだ'));
+  assert.ok(next.previousResult.includes('前回最後の問い'));
+  await engine.say(next.id, { text: '続きを話したい' });
+  const nodes = buildTree(await engine.chain(next.id));
+  assert.equal(nodes.find((n) => n.id === `${next.id}/root`).parent, `${id}/act`);
+});
+
 test('calibrationは不明を母数から除く', () => {
   const s = (outcome, confidence) => ({ act: { confidence, result: { outcome } } });
   const c = calibration([s('held', 80), s('broken', 100), s('unclear', 50)]);

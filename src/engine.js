@@ -58,6 +58,13 @@ function userSource(s) {
   return s.messages.filter((m) => m.role === 'user' && !m.mode).map((m) => m.text).join('\n');
 }
 
+// 次の周回へ渡す前回の要点。結果が出る前に続けた場合は、実験中の前提と最後の問いを渡す。
+function carryOver(p) {
+  if (p.act?.result) return `${p.act.belief} → ${p.act.result.note}`;
+  const lastQuestion = p.messages.findLast((m) => m.role === 'assistant')?.text ?? '';
+  return [p.act ? `${p.act.belief}（結果はまだ）` : '', lastQuestion ? `前回最後の問い: ${lastQuestion}` : ''].filter(Boolean).join(' / ');
+}
+
 export class Engine {
   constructor({ store, provider, now = () => new Date() }) {
     this.store = store;
@@ -80,7 +87,7 @@ export class Engine {
       id: randomUUID(),
       createdAt: this.now().toISOString(),
       previousId: previous?.id ?? null,
-      previousResult: previous?.act?.result ? `${previous.act.belief} → ${previous.act.result.note}` : '',
+      previousResult: previous ? carryOver(previous) : '',
       title: previous?.title ?? '',
       confidenceBefore: percent(input.confidenceBefore, '今の点数'),
       messages: [],
