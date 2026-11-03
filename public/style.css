@@ -176,3 +176,5 @@ button.ghost, .button.ghost { color: var(--ink); background: transparent; border
   .growth-tree .branch { animation: none; stroke-dashoffset: 0; }
 }
 .growth-tree { display: block; width: 100%; height: auto; margin: 0 auto; }
+.growth-tree .leaf.recalled path, .growth-tree .leaf.recalled circle, .growth-tree .leaf.recalled ellipse { stroke: #C99A2E; stroke-width: 3; }
+.recall-note { color: #8a6412; font-weight: 600; }

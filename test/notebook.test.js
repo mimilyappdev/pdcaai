@@ -96,3 +96,15 @@ test('観点帳の木は、周回ごとに幹が上へ伸び、全部の葉が�
   assert.deepEqual(t.leaves.filter((l) => l.cycleId === 'c2').map((l) => l.shape), ['leaf', 'flower']);
   assert.ok(t.leaves.every((l) => l.x > 0 && l.x < t.width && l.y > 0 && l.y < t.height));
 });
+
+test('前に見落とした型と一字一句同じときだけ、自分で思い出せたとして数え、補助輪を弱める', () => {
+  const book = { cycles: [] };
+  addCycle(book, [{ text: 'ない', phase: 'free' }], [{ ...item('money-ops'), pattern: 'アカウントの持ち主と復旧手順' }]);
+  assert.equal(hints(book).find((h) => h.lens === 'money-ops').level, 2);
+  const c = addCycle(book,
+    [{ text: '秘密キーをどうするか', phase: 'free', recalls: 'アカウントの持ち主と復旧手順' }, { text: '思いつき', phase: 'free', recalls: '存在しない型' }],
+    [item('breaker')]);
+  assert.deepEqual(c.own.map((o) => o.recalls?.lens ?? null), ['money-ops', null]);
+  assert.equal(summarize(c).recalled, 1);
+  assert.equal(hints(book).find((h) => h.lens === 'money-ops').level, 1);
+});

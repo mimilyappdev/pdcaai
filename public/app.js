@@ -412,7 +412,7 @@ function drawGrowthTree(cycles, lenses) {
   const { width, height, trunk, canopy, branches, leaves } = layoutGrowthTree(cycles, lenses);
   const crown = canopy.map((c) => svg('ellipse', { cx: c.cx, cy: c.cy, rx: c.rx, ry: c.ry, class: 'canopy' }));
   const detail = h('div', { class: 'detail' }, h('p', { class: 'muted' }, '葉・つぼみ・花を選ぶと内容を確認できます。下の根元から、周回ごとに上へ伸びます。'));
-  const pick = (leaf) => detail.replaceChildren(h('b', {}, `${leaf.lens}・${NOTE_TAGS[leaf.tag]}`), h('p', {}, leaf.text));
+  const pick = (leaf) => detail.replaceChildren(h('b', {}, `${leaf.lens}・${NOTE_TAGS[leaf.tag]}`), leaf.recalled ? h('p', { class: 'recall-note' }, '前に見落とした型を、ヒントなしで自分で出せました') : null, h('p', {}, leaf.text));
   const ground = svg('path', { d: `M${width / 2 - 70} ${trunk[0].y1 + 2} Q${width / 2} ${trunk[0].y1 - 6} ${width / 2 + 70} ${trunk[0].y1 + 2}`, class: 'ground' });
   const trunkEls = trunk.flatMap((t, i) => [
     svg('line', { x1: t.x, y1: t.y1, x2: t.x, y2: t.y2, 'stroke-width': t.width, class: 'trunk', style: `animation-delay:${i * 0.5}s` }),
@@ -426,15 +426,15 @@ function drawGrowthTree(cycles, lenses) {
     ];
   });
   const leafEls = leaves.map((l) => {
-    const name = `${l.lens}・${NOTE_TAGS[l.tag]}: ${l.text}`;
-    const g = svg('g', { class: `leaf tag-${l.tag}`, transform: `translate(${l.x.toFixed(1)} ${l.y.toFixed(1)}) rotate(${l.angle})`, tabindex: 0, role: 'button', 'aria-label': name, style: `--delay:${(l.order / 100) * 0.5 + 0.55}s` }, svg('title', {}, name), leafShape(l.shape));
+    const name = `${l.lens}・${NOTE_TAGS[l.tag]}${l.recalled ? '・前に見落とした型を自分で出せた' : ''}: ${l.text}`;
+    const g = svg('g', { class: `leaf tag-${l.tag}${l.recalled ? ' recalled' : ''}`, transform: `translate(${l.x.toFixed(1)} ${l.y.toFixed(1)}) rotate(${l.angle})`, tabindex: 0, role: 'button', 'aria-label': name, style: `--delay:${(l.order / 100) * 0.5 + 0.55}s` }, svg('title', {}, name), leafShape(l.shape));
     g.addEventListener('click', () => pick(l));
     g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(l); } });
     return g;
   });
   const legend = h('div', { class: 'legend' },
     Object.entries(NOTE_TAGS).filter(([k]) => k !== 'none').map(([k, v]) => h('span', { class: `chip tag-${k}` }, v)),
-    h('span', { class: 'muted shape-note' }, '葉=自分の考え / つぼみ=AIの気づき / 花=ヒントで広がった'));
+    h('span', { class: 'muted shape-note' }, '葉=自分の考え / つぼみ=AIの気づき / 花=ヒントで広がった / 金の縁=前に見落とした型を自分で出せた'));
   const scroller = h('div', { class: 'tree-scroll' });
   scroller.append(svg('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': '観点帳の木', class: 'growth-tree', style: `max-width:${width}px` }, ...crown, ground, ...trunkEls, ...branchEls, ...leafEls));
   treeBox.replaceChildren(h('h2', {}, '観点帳の木'), legend, scroller, detail);
@@ -459,6 +459,7 @@ async function notebookView() {
         h('div', { class: 'bar', role: 'img', 'aria-label': `自分で出せた割合 ${pctText(s.selfRate)}` },
           h('span', { style: `width:${s.selfRate ?? 0}%` })),
         h('p', {}, `自分で ${s.self} / ヒントで ${s.hint} / AIだけ ${s.ai}（全${s.total}件、自分で出せた割合 ${pctText(s.selfRate)}）`, s.ownOnly ? ` / 自分だけ ${s.ownOnly}` : '', s.spread ? ` / ヒントで広がった ${s.spread}` : ''),
+        s.recalled ? h('p', { class: 'recall-note' }, `前に見落とした型を、ヒントなしで自分で出せた ${s.recalled}`) : null,
         h('p', { class: 'muted' }, `最初の自信 ${s.confidenceBefore}% → 見直し ${pctText(s.confidenceAfter)}　思い込みのズレ ${s.selfRate == null ? '-' : `${s.confidenceBefore - s.selfRate}pt`}`))))) : null,
     h('section', { class: 'card' },
       h('h2', {}, '補助輪の状態'),

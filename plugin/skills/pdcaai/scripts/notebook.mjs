@@ -64,7 +64,9 @@ export function hints(book) {
     const items = recent.flatMap((c) => c.items.filter((i) => i.lens === lens));
     const missed = items.filter((i) => i.status !== 'self');
     if (!missed.length) continue;
-    const rate = items.filter((i) => i.status === 'self').length / items.length;
+    // 前に見落とした型をヒントなしで自分で出せた回も、自分で出せたものとして数える。
+    const recalled = book.cycles.slice(-WINDOW).flatMap((c) => c.own.filter((o) => o.recalls?.lens === lens)).length;
+    const rate = (items.filter((i) => i.status === 'self').length + recalled) / (items.length + recalled);
     const level = rate < 1 / 3 ? 2 : rate < 2 / 3 ? 1 : 0;
     if (!level) continue;
     // 前の題材の項目そのままでは話がつながらないため、題材に依存しない型があればそちらを見せる。
@@ -86,7 +88,20 @@ export function known(book) {
   return {
     items: [...new Set(recent.flatMap((c) => c.items.map((i) => i.item)))],
     said: recent.flatMap((c) => c.own.map((o) => o.text)),
+    missedPatterns: missedPatterns(book).map((m) => m.pattern),
   };
+}
+
+// これまでに見落とした型（AIだけ、またはヒントで追いついた項目の型）。重複は除く。
+export function missedPatterns(book) {
+  const seen = new Map();
+  for (const c of book.cycles) {
+    for (const i of c.items) {
+      const pattern = i.pattern || i.item;
+      if (i.status !== 'self' && !seen.has(pattern)) seen.set(pattern, { pattern, lens: i.lens, cycleId: c.id });
+    }
+  }
+  return [...seen.values()];
 }
 
 export function summarize(cycle) {
@@ -101,6 +116,8 @@ export function summarize(cycle) {
     ownOnly: cycle.own.filter((o) => o.phase === 'free' && !cycle.items.some((i) => i.ownId === o.id)).length,
     // ヒントのあとに出た、AIの項目とも重ならない自分の検討事項。ヒントで考えが広がった数。
     spread: cycle.own.filter((o) => o.phase === 'hint' && !cycle.items.some((i) => i.ownId === o.id)).length,
+    // 前に見落とした型を、ヒントなしで自分で出せた数。人間の伸びに一番近い数字。
+    recalled: cycle.own.filter((o) => o.phase === 'free' && o.recalls).length,
     selfRate: total ? Math.round((self / total) * 100) : null,
     confidenceBefore: cycle.confidenceBefore,
     confidenceAfter: cycle.confidenceAfter ?? null,
@@ -112,11 +129,17 @@ export function stats(book) {
 }
 
 export function buildCycle(input, book, now = new Date()) {
-  const own = (input.own ?? []).slice(0, LIMIT.items).map((o, i) => ({
-    id: `o${i + 1}`,
-    text: str(o.text, '自分の検討事項'),
-    phase: o.phase === 'hint' ? 'hint' : 'free',
-  }));
+  // recalls は、前の周回で実際に見落とした型と一字一句同じときだけ認める。
+  const before = new Map(missedPatterns(book).map((m) => [m.pattern, m]));
+  const own = (input.own ?? []).slice(0, LIMIT.items).map((o, i) => {
+    const hit = o.recalls ? before.get(String(o.recalls)) : null;
+    return {
+      id: `o${i + 1}`,
+      text: str(o.text, '自分の検討事項'),
+      phase: o.phase === 'hint' ? 'hint' : 'free',
+      ...(hit ? { recalls: { pattern: hit.pattern, lens: hit.lens, from: hit.cycleId } } : {}),
+    };
+  });
   // 本人の1つの答えが一致するのは、AIの1項目までにする。
   const used = new Set();
   const items = (input.items ?? []).slice(0, LIMIT.items).map((it, i) => {

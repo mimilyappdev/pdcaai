@@ -36,7 +36,7 @@ export function renderSvg(cycles) {
     `<path d="M${cx - 70} ${trunk[0].y1 + 2} Q${cx} ${trunk[0].y1 - 6} ${cx + 70} ${trunk[0].y1 + 2}" fill="none" stroke="#8a6f52" stroke-width="3" stroke-linecap="round"/>`,
     ...trunk.map((t) => `<line x1="${t.x}" y1="${t.y1}" x2="${t.x}" y2="${t.y2}" stroke="#7a5236" stroke-width="${t.width}" stroke-linecap="round"/><text x="8" y="${t.y1 - 8}" font-size="11" fill="#666">${esc(t.label)}</text>`),
     ...branches.map((b) => `<path d="M${b.x0} ${b.y0} Q${b.qx} ${b.qy} ${b.x1} ${b.y1}" fill="none" stroke="#8f6545" stroke-width="3" stroke-linecap="round"/><text x="${b.x1 + b.side * 6}" y="${b.y1 + 4}" text-anchor="${b.side > 0 ? 'start' : 'end'}" font-size="11" fill="#666">${esc(b.label)}</text>`),
-    ...leaves.map((l) => `<g transform="translate(${l.x.toFixed(1)} ${l.y.toFixed(1)}) rotate(${l.angle})"><title>${esc(l.text)}</title>${shape(l)}</g>`),
+    ...leaves.map((l) => `<g transform="translate(${l.x.toFixed(1)} ${l.y.toFixed(1)}) rotate(${l.angle})"><title>${esc(l.text)}</title>${l.recalled ? '<circle r="14" fill="none" stroke="#C99A2E" stroke-width="2.5"/>' : ''}${shape(l)}</g>`),
   ].join('\n');
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height + top}" width="${width}" height="${height + top}" font-family="sans-serif">
 <rect width="100%" height="100%" fill="#fffdf8"/>

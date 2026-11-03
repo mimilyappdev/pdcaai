@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pdcaai 検討ページ</title>
+<style>
+  :root { --paper: #f6f3ec; --card: #fffdf8; --ink: #20241f; --sub: #646a60; --line: #d9d4c7; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: system-ui, sans-serif; line-height: 1.7; }
+  main { max-width: 920px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  .lead { color: var(--sub); margin: 0 0 24px; }
+  article { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin-bottom: 24px; }
+  article h2 { font-size: 20px; margin: 0; }
+  .date { color: var(--sub); font-size: 14px; }
+  .compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 16px 0; }
+  figure { margin: 0; }
+  figure img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+  figcaption { font-size: 14px; color: var(--sub); }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+  .sw { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: -2px; margin-right: 6px; border: 1px solid #0003; }
+  .scroll { overflow-x: auto; }
+</style>
+</head>
+<body>
+<main>
+<h1>pdcaai 検討ページ</h1>
+<p class="lead">見た目や構成の検討を、新しいものから上に積み上げます。古い検討は消さずに残します。</p>
+
+<article id="2026-11-04-tree">
+<p class="date">2026-11-04</p>
+<h2>観点帳のツリーを「一本の木」に作り直す</h2>
+
+<h3>何を変えたか</h3>
+<ul>
+  <li>丸を線でつないだ図から、幹・枝・葉の木に変えた。周回ごとに幹が1段ずつ上へ伸び、各段からAI社員ごとの枝が左右に開く。</li>
+  <li>色を、色覚の違いがあっても区別しやすい Okabe-Ito の配色に揃えた。会話の思考ツリーと観点帳で、同じ意味には同じ色を使う。</li>
+  <li>色に加えて形でも区別する。自分の考えは葉、AIの気づきはつぼみ、ヒントで広がった考えは花。</li>
+  <li>前に見落とした型を、次の周回でヒントなしで自分で出せた葉に、金の縁を付けた。</li>
+  <li>開いたときに、幹→枝→葉の順に育つ動きを付けた。動きを減らす設定の人には動かさない。</li>
+</ul>
+
+<h3>修正理由</h3>
+<p>作者から「今のツリーはダサい。発見や深さを色で分け、根拠も示し、最終的には木のように開いていくイメージにしたい」と指摘があった。前の図は配置が機械的で、何が自分の伸びなのかが一目で分からなかった。</p>
+
+<div class="compare">
+  <figure><img src="kento/2026-11-04/before.jpg" alt="変更前: 丸と線のツリー"><figcaption>変更前: 丸と線。色の意味が読み取りにくい</figcaption></figure>
+  <figure><img src="kento/2026-11-04/after.svg" alt="変更後: 一本の木"><figcaption>変更後: 周回ごとに伸びる一本の木（架空のペルソナのデータ）</figcaption></figure>
+</div>
+
+<h3>色と形の根拠</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>区分</th><th>色</th><th>形</th><th>根拠</th></tr></thead>
+  <tbody>
+    <tr><td>自分で出せた</td><td><span class="sw" style="background:#009E73"></span>緑 #009E73</td><td>葉</td><td>木が自分で伸ばした葉。緑は「育つ・自分のもの」と結びつきやすい。会話ツリーの「思考」も同じ緑。</td></tr>
+    <tr><td>自分だけ</td><td><span class="sw" style="background:#0072B2"></span>青 #0072B2</td><td>葉</td><td>AIの社員が誰も出せなかった、本人ならではの考え。深い青で「深さ・独自性」を表す。会話ツリーの「結論」と同じ色で、自分の到達点として揃えた。</td></tr>
+    <tr><td>ヒントで広がった</td><td><span class="sw" style="background:#CC79A7"></span>赤紫 #CC79A7</td><td>花</td><td>ヒントをきっかけに、AIも出していない考えが新しく咲いたもの。人間の思考が広がった印として一番目立つ形にした。会話ツリーの「発見」も同じ色。</td></tr>
+    <tr><td>ヒントで追いついた</td><td><span class="sw" style="background:#56B4E9"></span>空色 #56B4E9</td><td>葉</td><td>補助輪（ヒント）の支えで出せた葉。自分の考え側なので寒色にそろえ、明るさで「自分で出せた」と区別した。</td></tr>
+    <tr><td>AIで気づいた</td><td><span class="sw" style="background:#E69F00"></span>橙 #E69F00</td><td>つぼみ</td><td>まだ自分の葉になっていない気づき。暖色で目を引き、次の周回で葉に変えたい対象として示す。</td></tr>
+    <tr><td>保留（会話ツリー）</td><td><span class="sw" style="background:#F0E442"></span>黄 #F0E442</td><td>丸</td><td>信号の黄色と同じ「いったん止まる」。</td></tr>
+    <tr><td>やらない</td><td><span class="sw" style="background:#BBBBBB"></span>灰 #BBBBBB</td><td>つぼみ</td><td>判断済みのものは目立たせない。</td></tr>
+    <tr><td>前に見落とした型を自分で出せた</td><td><span class="sw" style="background:#fff;border:3px solid #C99A2E"></span>金の縁 #C99A2E</td><td>葉の縁</td><td>人間の伸びに一番近い印。前の周回でAIだけが出した型を、次はヒントなしで自分で出せたときに付ける。金は「獲得したもの」の連想で、他の区分の色と重ならない。</td></tr>
+    <tr><td>深さ（周回）</td><td>幹の段と太さ</td><td>幹</td><td>年輪のたとえ。周回を重ねるほど下の幹が太くなり、積み重ねが見える。</td></tr>
+  </tbody>
+</table>
+</div>
+<p><strong>なぜ Okabe-Ito か:</strong> 色覚の違いがあっても区別しやすいように設計された8色の配色で、広く使われています。さらに形でも区別するので、色だけに頼りません。</p>
+
+<h3>未確認・次の検討</h3>
+<ul>
+  <li>周回が10を超えると縦に長くなる。古い周回をたたむ表示が要るかもしれない。</li>
+  <li>スマホ幅では木の部分が横にスクロールする。</li>
+</ul>
+</article>
+
+</main>
+</body>
+</html>
