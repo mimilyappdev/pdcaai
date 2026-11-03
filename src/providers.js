@@ -11,9 +11,9 @@ const MODEL = 'claude-opus-5-5';
 export function apiProvider(client = new Anthropic()) {
   return {
     name: 'api',
-    async generate({ system, user, schema, effort = 'high' }) {
+    async generate({ system, user, schema, effort = 'high', model = MODEL }) {
       const stream = client.beta.messages.stream({
-        model: MODEL,
+        model,
         max_tokens: 16000,
         betas: ['server-side-fallback-2026-07-01'],
         fallbacks: 'default',
@@ -36,9 +36,9 @@ export function apiProvider(client = new Anthropic()) {
 export function cliProvider(run = runClaude) {
   return {
     name: 'claude-code',
-    async generate({ system, user, schema, effort = 'high' }) {
+    async generate({ system, user, schema, effort = 'high', model = MODEL }) {
       const out = await run(
-        ['-p', '--model', MODEL, '--effort', effort, '--output-format', 'json',
+        ['-p', '--model', model, '--effort', effort, '--output-format', 'json',
           '--json-schema', JSON.stringify(schema), '--system-prompt', system,
           '--tools', '', '--no-session-persistence', '--setting-sources', ''],
         user,
