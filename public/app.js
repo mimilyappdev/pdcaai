@@ -88,7 +88,7 @@ function renderTree() {
   const selected = byId.get(tree.selected);
   const detail = selected ? h('div', { class: 'detail' },
     h('b', {}, selected.label), h('p', {}, selected.text),
-    selected.kind === 'locked' ? null : h('label', {}, '自分の分類',
+    selected.kind.startsWith('locked') ? null : h('label', {}, '自分の分類',
       h('select', {
         onchange: async (e) => {
           const updated = await api(`sessions/${selected.sessionId}/tags`, { node: selected.local, tag: e.target.value });
@@ -207,8 +207,14 @@ async function session(id) {
 }
 
 function bubbles(messages) {
-  return h('div', { class: 'chat', 'aria-live': 'polite' }, messages.map((m) =>
-    h('div', { class: `bubble ${m.role}` }, m.text)));
+  return h('div', { class: 'chat', 'aria-live': 'polite' }, messages.flatMap((m) => [
+    h('div', { class: `bubble ${m.role}` }, m.text),
+    m.mirror ? h('div', { class: 'mirror' },
+      h('span', { class: 'mirror-head' }, 'あなたの発言を並べると'),
+      h('blockquote', {}, m.mirror.a),
+      h('blockquote', {}, m.mirror.b),
+      m.mirror.note ? h('p', {}, m.mirror.note) : null) : null,
+  ]));
 }
 
 function chatView(start) {

@@ -134,3 +134,12 @@ button.ghost, .button.ghost { color: var(--ink); background: transparent; border
 .composer button[hidden] { display: none; }
 .seal + .seal { margin-top: 10px; }
 .seal p { margin: 4px 0 0; }
+
+.mirror { align-self: stretch; border-left: 4px solid var(--accent); background: var(--card); padding: 10px 14px; border-radius: 4px; }
+.mirror-head { font-size: 13px; color: var(--sub); }
+.mirror blockquote { margin: 6px 0; padding: 0; font-weight: 600; overflow-wrap: anywhere; }
+.mirror blockquote::before { content: "「"; } .mirror blockquote::after { content: "」"; }
+.mirror p { margin: 6px 0 0; color: var(--sub); }
+.node.kind-locked.ready circle { stroke: #f2c14e; stroke-width: 4; animation: glow 1.6s ease-in-out infinite alternate; }
+@keyframes glow { from { stroke-opacity: .35; } to { stroke-opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .node.kind-locked.ready circle { animation: none; } }

@@ -8,6 +8,7 @@ const LIMITS = { message: 4000, field: 2000 };
 const MIN_USER_MESSAGES_TO_OPEN = 2;
 const MAX_NODES_PER_TURN = 2;
 const MODE_TEXT = { unknown: 'わからない', hint: 'ヒントちょうだい' };
+const MIRROR_EVERY = 3;
 
 function percent(value, label) {
   const n = Number(value);
@@ -52,6 +53,15 @@ export function stretchScore(s) {
     return { ...item, met: Boolean(c?.met), quote: c?.evidence_quote ?? '', note: c?.note ?? '' };
   });
   return { base: 100, total: 100 + items.filter((i) => i.met).length * 2.5, items };
+}
+
+// 2つの引用が、それぞれ本人の別々の発言に実在するときだけ並べる。
+function verifyMirror(m, said) {
+  if (!m?.a || !m?.b) return null;
+  const ia = said.findIndex((t) => quoteExists(m.a, t));
+  const ib = said.findIndex((t) => quoteExists(m.b, t));
+  if (ia < 0 || ib < 0 || ia === ib) return null;
+  return { a: m.a, b: m.b, note: String(m.note ?? '').slice(0, 60) };
 }
 
 function userSource(s) {
@@ -121,8 +131,11 @@ export class Engine {
     if (s.check) throw new InputError('この周回は開封済みです');
     const lastQuestion = s.messages.filter((m) => m.role === 'assistant').at(-1)?.text ?? '';
     s.messages.push({ role: 'user', text: message, ...(mode === 'normal' ? {} : { mode }) });
-    const out = await this.provider.generate({ ...turnPrompt(s, mode, s.nodes), effort: 'low' });
-    s.messages.push({ role: 'assistant', text: out.reply, ...(mode === 'hint' ? { hint: true } : {}) });
+    const said = s.messages.filter((m) => m.role === 'user' && !m.mode).map((m) => m.text);
+    const withMirror = mode === 'normal' && said.length % MIRROR_EVERY === 0;
+    const out = await this.provider.generate({ ...turnPrompt(s, mode, s.nodes, withMirror), effort: 'low' });
+    const mirror = withMirror ? verifyMirror(out.mirror, said) : null;
+    s.messages.push({ role: 'assistant', text: out.reply, ...(mode === 'hint' ? { hint: true } : {}), ...(mirror ? { mirror } : {}) });
     if (!s.title && out.work_title) s.title = out.work_title;
 
     const known = new Set(s.nodes.map((n) => n.id));

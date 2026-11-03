@@ -185,6 +185,23 @@ test('結果が出る前でも続きの周回をつなげ、前回の最後の�
   assert.equal(nodes.find((n) => n.id === `${next.id}/root`).parent, `${id}/act`);
 });
 
+test('3回話すごとに本人の別々の発言を並べ、実在しない引用なら並べない', async () => {
+  const { engine, id } = await ready(mockProvider(), 3);
+  const mirrored = (await engine.require(id)).messages.filter((m) => m.mirror);
+  assert.equal(mirrored.length, 1);
+  assert.deepEqual([mirrored[0].mirror.a, mirrored[0].mirror.b], [lines[0], lines[2]]);
+
+  const provider = mockProvider();
+  const original = provider.generate;
+  provider.generate = async (req) => {
+    const out = await original(req);
+    if (out.mirror) out.mirror = { a: lines[0], b: '本人が言っていない立派な文章', note: '' };
+    return out;
+  };
+  const other = await ready(provider, 3);
+  assert.equal((await other.engine.require(other.id)).messages.some((m) => m.mirror), false);
+});
+
 test('calibrationは不明を母数から除く', () => {
   const s = (outcome, confidence) => ({ act: { confidence, result: { outcome } } });
   const c = calibration([s('held', 80), s('broken', 100), s('unclear', 50)]);

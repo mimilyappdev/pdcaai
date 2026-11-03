@@ -38,6 +38,7 @@ export function mockResponse({ schema, user }) {
       }],
       new_sealed: VIEWS[turn] ? [VIEWS[turn]] : [],
       ready_to_open: turn >= 2,
+      mirror: !asked && lines.length >= 3 ? { a: lines[0], b: latest, note: '並べるとどう見えますか？' } : { a: '', b: '', note: '' },
     };
   }
   if (keys.includes('next_gap')) {

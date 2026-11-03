@@ -28,7 +28,11 @@ const MODE_RULES = {
   hint: '作り手はヒントを求めています。今の話に合う具体例を1つだけ、可能性として軽く示してから、感想を聞いてください。',
 };
 
-export function turnPrompt(s, mode, nodes) {
+// 作り手自身の発言を2つ並べて返す。普通のチャットは過去の発言を並べ直さないので、ここで違いを見せる。
+const MIRROR_RULE = `
+mirror も書いてください。作り手のこれまでの発言から、並べると食い違いや確かめていない点が見える2つを選び、別々の発言から一字一句そのまま a と b に引用します。note は全角30字以内で、評価や提案をせず「並べるとどう見えますか？」のように軽く添えます。良い組み合わせがなければ3項目とも空文字にします。`;
+
+export function turnPrompt(s, mode, nodes, withMirror = false) {
   return {
     system: `あなたは作り手の話し相手です。作り手が「もう完成」と感じているものについて雑談しながら、本人が自分の思い込みに気づくきっかけを作ります。
 相手に考えることを強いないでください。一言の返事や「わからない」で十分です。評価、説教、長文の要求はしません。
@@ -41,8 +45,9 @@ export function turnPrompt(s, mode, nodes) {
   - kind: assumption=まだ確かめていない思い込み、thought=本人の考え、discovery=本人が自分で新しく気づいたこと
 - new_sealed: まだ見立てがない視点で、会話から見えた盲点を0〜1件。replyには書かない。作り手の言葉を「」で引き、2文以内。probeは確かめ方を1文
 - ready_to_open: 3つの視点に一通り触れたら true
+- mirror: 指示があるときだけ書く。なければ3項目とも空文字
 ${DATA_RULE}`,
-    user: `${previousBlock(s)}既存の枝:\n${nodes.map((n) => `${n.id}: ${safe(n.label)}`).join('\n') || '(なし)'}\n\n持っている見立ての視点: ${s.sealed.map((v) => v.lens).join('、') || '(なし)'}\n\n<conversation>\n${transcript(s)}\n</conversation>\n\n今回の指示: ${MODE_RULES[mode]}`,
+    user: `${previousBlock(s)}既存の枝:\n${nodes.map((n) => `${n.id}: ${safe(n.label)}`).join('\n') || '(なし)'}\n\n持っている見立ての視点: ${s.sealed.map((v) => v.lens).join('、') || '(なし)'}\n\n<conversation>\n${transcript(s)}\n</conversation>\n\n今回の指示: ${MODE_RULES[mode]}${withMirror ? MIRROR_RULE : ''}`,
     schema: obj({
       reply: str,
       work_title: str,
@@ -52,6 +57,7 @@ ${DATA_RULE}`,
       },
       new_sealed: { type: 'array', items: view },
       ready_to_open: { type: 'boolean' },
+      mirror: obj({ a: str, b: str, note: str }),
     }),
   };
 }

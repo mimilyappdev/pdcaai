@@ -29,7 +29,7 @@ export function buildTree(sessions) {
     for (const n of s.nodes) add(n.id, n.parent, n.kind, n.label, n.text, AUTO_TAG[n.kind] ?? 'thought');
     for (const v of s.sealed) {
       if (s.check) add(v.id, v.parent, 'sealed', v.lens, v.view, v.reachedQuote ? 'discovery' : 'none');
-      else add(v.id, v.parent, 'locked', '封印中', '話したあとで開きます。', 'none');
+      else add(v.id, v.parent, s.readyToOpen ? 'locked ready' : 'locked', '封印中', s.readyToOpen ? 'もう開けます。' : '話したあとで開きます。', 'none');
     }
 
     if (s.act) {
