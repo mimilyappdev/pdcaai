@@ -55,7 +55,8 @@ main.with-tree { max-width: 1240px; display: grid; grid-template-columns: minmax
 #tree h2 { margin: 0 0 6px; font-size: 16px; }
 #tree .muted { margin: 0; border-top: 1px solid var(--line); padding-top: 10px; }
 @media (max-width: 900px) {
-  main.with-tree { display: flex; flex-direction: column-reverse; }
+  main.with-tree { grid-template-columns: minmax(0, 1fr); }
+  #tree { order: -1; }
   #tree { position: static; width: 100%; max-height: none; }
   .tree-scroll { max-height: 42vh; }
 }
@@ -123,3 +124,13 @@ button.ghost, .button.ghost { color: var(--ink); background: transparent; border
   .stat b { font-size: 21px; }
 }
 @media (prefers-reduced-motion: reduce) { .waiting::after, .node.fresh { animation: none; } }
+
+.chat { display: flex; flex-direction: column; gap: 10px; margin: 0 0 16px; }
+.bubble { max-width: 88%; padding: 10px 14px; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.bubble.assistant { align-self: flex-start; background: var(--card); border: 1px solid var(--line); }
+.bubble.user { align-self: flex-end; background: #ecdcd2; }
+.composer { position: sticky; bottom: 0; background: var(--paper); padding: 10px 0 14px; }
+.composer textarea { min-height: 64px; margin: 0 0 8px; }
+.composer button[hidden] { display: none; }
+.seal + .seal { margin-top: 10px; }
+.seal p { margin: 4px 0 0; }

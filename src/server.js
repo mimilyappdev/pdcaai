@@ -49,9 +49,9 @@ async function route(engine, req, res, providerName) {
     if (req.method === 'POST') {
       const body = await readJson(req);
       if (!id) return send(res, 201, await engine.create(body));
-      if (action === 'assumptions') return send(res, 200, await engine.assumptions(id));
-      if (action === 'reviewers' && role) return send(res, 200, await engine.reviewer(id, role));
-      if (action === 'answers') return send(res, 200, await engine.submitAnswers(id, body));
+      if (action === 'messages') return send(res, 200, await engine.say(id, body));
+      if (action === 'open') return send(res, 200, await engine.open(id));
+      if (action === 'propose') return send(res, 200, await engine.propose(id));
       if (action === 'act') return send(res, 200, await engine.submitAct(id, body));
       if (action === 'tags') return send(res, 200, await engine.setTag(id, body));
       if (action === 'result') return send(res, 200, await engine.submitResult(id, body));

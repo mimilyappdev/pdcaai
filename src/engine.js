@@ -1,10 +1,13 @@
 import { randomUUID } from 'node:crypto';
-import { ROLES, assumptionsPrompt, checkPrompt, reviewerPrompt } from './prompts.js';
+import { openPrompt, proposePrompt, turnPrompt } from './prompts.js';
 import { TAGS } from '../public/tree.js';
 
 export class InputError extends Error {}
 
-const LIMITS = { name: 100, audience: 200, belief: 2000, evidence: 2000, material: 20000, answer: 4000 };
+const LIMITS = { message: 4000, field: 2000 };
+const MIN_USER_MESSAGES_TO_OPEN = 2;
+const MAX_NODES_PER_TURN = 2;
+const MODE_TEXT = { unknown: 'わからない', hint: 'ヒントちょうだい' };
 
 function percent(value, label) {
   const n = Number(value);
@@ -12,9 +15,9 @@ function percent(value, label) {
   return n;
 }
 
-function text(value, label, max, { required = true } = {}) {
+function text(value, label, max) {
   const v = typeof value === 'string' ? value.trim() : '';
-  if (required && !v) throw new InputError(`${label}を入力してください`);
+  if (!v) throw new InputError(`${label}を入力してください`);
   if (v.length > max) throw new InputError(`${label}は${max}文字以内にしてください`);
   return v;
 }
@@ -23,30 +26,25 @@ function text(value, label, max, { required = true } = {}) {
 export function quoteExists(quote, source) {
   const normalize = (s) => s.replace(/\s+/g, '').replace(/＜/g, '<').replace(/＞/g, '>');
   const q = normalize(quote ?? '');
-  return q.length >= 4 && normalize(source).includes(q);
+  return q.length >= 2 && normalize(source).includes(q);
 }
 
-// 表示用の前提を除いた、利用者に見せてよい状態だけを返す。封印はここで守る。
+// 開封前の見立ては中身を外し、枝の位置だけを返す。
 export function publicView(s) {
   const opened = Boolean(s.check);
-  const reviewers = {};
-  for (const [key, r] of Object.entries(s.reviewers)) {
-    reviewers[key] = {
-      label: ROLES[key].label,
-      question: r.question,
-      target: r.target,
-      ...(opened ? { sealed_view: r.sealed_view, sealed_probe: r.sealed_probe } : {}),
-    };
-  }
-  return { ...s, reviewers, stretch: stretchScore(s) };
+  return {
+    ...s,
+    sealed: s.sealed.map((v) => (opened ? v : { id: v.id, parent: v.parent })),
+    stretch: stretchScore(s),
+  };
 }
 
 // 能力の点数ではなく、この回の踏み込みの記録。AIの判定は引用が確認できた項目だけ数える。
 export function stretchScore(s) {
   const items = [
     { key: 'doubted', label: '前提を自分で疑った' },
-    { key: 'evidence', label: '観測事実で確かめた' },
-    { key: 'self_found', label: '自分の案を出した' },
+    { key: 'evidence', label: '事実に触れた' },
+    { key: 'self_found', label: '自分の見方を出した' },
     { key: 'testable', label: '試せる行動に落とした' },
   ].map((item) => {
     if (item.key === 'testable') return { ...item, met: Boolean(s.act), quote: s.act?.action ?? '' };
@@ -54,6 +52,10 @@ export function stretchScore(s) {
     return { ...item, met: Boolean(c?.met), quote: c?.evidence_quote ?? '', note: c?.note ?? '' };
   });
   return { base: 100, total: 100 + items.filter((i) => i.met).length * 2.5, items };
+}
+
+function userSource(s) {
+  return s.messages.filter((m) => m.role === 'user' && !m.mode).map((m) => m.text).join('\n');
 }
 
 export class Engine {
@@ -78,19 +80,15 @@ export class Engine {
       id: randomUUID(),
       createdAt: this.now().toISOString(),
       previousId: previous?.id ?? null,
-      work: {
-        name: text(input.name, '作ったもの', LIMITS.name),
-        audience: text(input.audience, '届けたい相手', LIMITS.audience),
-        belief: text(input.belief, '100点だと思う理由', LIMITS.belief),
-        evidence: text(input.evidence, 'そう思う根拠', LIMITS.evidence),
-        material: text(input.material, '補足資料', LIMITS.material, { required: false }),
-      },
-      // AIの問いを見る前の自信。開封後の自信と比べる。
-      confidenceBefore: percent(input.confidenceBefore, '今の自信'),
-      assumptions: [],
-      reviewers: {},
-      answers: null,
+      previousResult: previous?.act?.result ? `${previous.act.belief} → ${previous.act.result.note}` : '',
+      title: previous?.title ?? '',
+      confidenceBefore: percent(input.confidenceBefore, '今の点数'),
+      messages: [],
+      nodes: [],
+      sealed: [],
+      readyToOpen: false,
       check: null,
+      proposal: null,
       act: null,
       tags: {},
     };
@@ -104,64 +102,85 @@ export class Engine {
     return s;
   }
 
-  async assumptions(id) {
-    return this.once(`${id}:assumptions`, async () => {
-      const s = await this.require(id);
-      if (s.assumptions.length) return publicView(s);
-      const out = await this.provider.generate({ ...assumptionsPrompt(s), effort: 'medium' });
-      if (!Array.isArray(out.assumptions) || !out.assumptions.length) throw new Error('前提を取り出せませんでした');
-      s.assumptions = out.assumptions.slice(0, 4).map((a, i) => ({ id: `a${i + 1}`, ...a }));
-      await this.store.put(s);
-      return publicView(s);
-    });
+  async say(id, input) {
+    const mode = Object.hasOwn(MODE_TEXT, input.mode ?? '') ? input.mode : 'normal';
+    const message = mode === 'normal' ? text(input.text, '発言', LIMITS.message) : MODE_TEXT[mode];
+    if (this.running.has(`${id}:turn`)) throw new InputError('返答を待っています');
+    return this.once(`${id}:turn`, () => this.turn(id, message, mode));
   }
 
-  async reviewer(id, role) {
-    if (!Object.hasOwn(ROLES, role)) throw new InputError('不明な役割です');
-    return this.once(`${id}:${role}`, () => this.generateReviewer(id, role));
-  }
-
-  async generateReviewer(id, role) {
+  async turn(id, message, mode) {
     const s = await this.require(id);
-    if (!s.assumptions.length) throw new InputError('先に前提を取り出してください');
-    if (!s.reviewers[role]) {
-      const request = { ...reviewerPrompt(s, role), effort: 'medium' };
-      let out = await this.provider.generate(request);
-      // 長い問いは一度だけ作り直す。
-      if ((out.question ?? '').length > 60) out = await this.provider.generate(request);
-      // 並列実行中の他の役割を消さないよう、保存直前に読み直す。
-      const latest = await this.require(id);
-      latest.reviewers[role] = out;
-      await this.store.put(latest);
-      return publicView(latest).reviewers[role];
-    }
-    return publicView(s).reviewers[role];
-  }
+    if (s.check) throw new InputError('この周回は開封済みです');
+    const lastQuestion = s.messages.filter((m) => m.role === 'assistant').at(-1)?.text ?? '';
+    s.messages.push({ role: 'user', text: message, ...(mode === 'normal' ? {} : { mode }) });
+    const out = await this.provider.generate({ ...turnPrompt(s, mode, s.nodes), effort: 'low' });
+    s.messages.push({ role: 'assistant', text: out.reply, ...(mode === 'hint' ? { hint: true } : {}) });
+    if (!s.title && out.work_title) s.title = out.work_title;
 
-  submitAnswers(id, input) {
-    return this.once(`${id}:answers`, () => this.checkAnswers(id, input));
-  }
-
-  async checkAnswers(id, input) {
-    const s = await this.require(id);
-    if (s.check) return publicView(s);
-    for (const role of Object.keys(ROLES)) {
-      if (!s.reviewers[role]) throw new InputError('まだ問いが揃っていません');
+    const known = new Set(s.nodes.map((n) => n.id));
+    const add = (node) => {
+      const nodeId = `n${s.nodes.length + 1}`;
+      s.nodes.push({ id: nodeId, ...node, parent: known.has(node.parent) ? node.parent : 'root' });
+      known.add(nodeId);
+    };
+    if (mode === 'unknown' && lastQuestion) {
+      add({ kind: 'pending', label: '保留', text: lastQuestion, quote: '', parent: 'root' });
     }
-    const answers = { own_idea: text(input.own_idea, '自分で見つけた+10案', LIMITS.answer) };
-    for (const [role, def] of Object.entries(ROLES)) {
-      answers[role] = text(input[role], `${def.label}への回答`, LIMITS.answer);
+    if (mode === 'normal') {
+      // 本人の発言に実在する引用がある枝だけをツリーへ入れる。
+      for (const b of (out.branches ?? []).slice(0, MAX_NODES_PER_TURN)) {
+        if (quoteExists(b.quote, message)) add(b);
+      }
     }
-    s.answers = answers;
-    const raw = await this.provider.generate({ ...checkPrompt(s), effort: 'high' });
-    s.check = verifyCheck(raw, answers);
+    for (const v of out.new_sealed ?? []) {
+      if (!s.sealed.some((x) => x.lens === v.lens)) {
+        s.sealed.push({ id: `seal${s.sealed.length + 1}`, parent: s.nodes.at(-1)?.id ?? 'root', ...v });
+      }
+    }
+    s.readyToOpen = Boolean(out.ready_to_open);
     await this.store.put(s);
     return publicView(s);
   }
 
+  open(id) {
+    return this.once(`${id}:open`, () => this.openSeal(id));
+  }
+
+  async openSeal(id) {
+    const s = await this.require(id);
+    if (s.check) return publicView(s);
+    if (this.running.has(`${id}:turn`)) throw new InputError('返答を待っています');
+    const spoken = s.messages.filter((m) => m.role === 'user').length;
+    if (spoken < MIN_USER_MESSAGES_TO_OPEN) throw new InputError('もう少し話してから開けます');
+    const raw = await this.provider.generate({ ...openPrompt(s), effort: 'medium' });
+    for (const v of raw.new_view ?? []) {
+      if (!s.sealed.some((x) => x.lens === v.lens)) {
+        s.sealed.push({ id: `seal${s.sealed.length + 1}`, parent: s.nodes.at(-1)?.id ?? 'root', ...v });
+      }
+    }
+    s.check = verifyCheck(raw, userSource(s));
+    for (const r of s.check.reached) {
+      if (s.sealed[r.index]) s.sealed[r.index].reachedQuote = r.evidence_quote;
+    }
+    await this.store.put(s);
+    return publicView(s);
+  }
+
+  async propose(id) {
+    return this.once(`${id}:propose`, async () => {
+      const s = await this.require(id);
+      if (!s.check) throw new InputError('先に見立てを開いてください');
+      if (s.proposal) return s.proposal;
+      s.proposal = await this.provider.generate({ ...proposePrompt(s), effort: 'low' });
+      await this.store.put(s);
+      return s.proposal;
+    });
+  }
+
   async submitAct(id, input) {
     const s = await this.require(id);
-    if (!s.check) throw new InputError('先に振り返りを終えてください');
+    if (!s.check) throw new InputError('先に見立てを開いてください');
     const confidence = Number(input.confidence);
     if (!Number.isInteger(confidence) || confidence < 50 || confidence > 100) {
       throw new InputError('確信度は50〜100で入力してください');
@@ -171,11 +190,11 @@ export class Engine {
       throw new InputError('確認日の形式が正しくありません');
     }
     s.act = {
-      belief: text(input.belief, '確かめる前提', LIMITS.belief),
-      action: text(input.action, '試すこと', LIMITS.belief),
-      signal: text(input.signal, '外れたと判断する基準', LIMITS.belief),
+      belief: text(input.belief, '確かめる前提', LIMITS.field),
+      action: text(input.action, '試すこと', LIMITS.field),
+      signal: text(input.signal, '外れたと判断する基準', LIMITS.field),
       confidence,
-      confidenceAfter: percent(input.confidenceAfter, '開封後の自信'),
+      confidenceAfter: percent(input.confidenceAfter, '開封後の点数'),
       checkDate,
       result: s.act?.result ?? null,
     };
@@ -189,7 +208,7 @@ export class Engine {
     if (!['held', 'broken', 'unclear'].includes(input.outcome)) throw new InputError('結果を選んでください');
     s.act.result = {
       outcome: input.outcome,
-      note: text(input.note, '分かったこと', LIMITS.belief),
+      note: text(input.note, '分かったこと', LIMITS.field),
       recordedAt: this.now().toISOString(),
     };
     await this.store.put(s);
@@ -219,7 +238,9 @@ export class Engine {
   }
 
   async ledger() {
-    const sessions = (await this.store.all()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    const sessions = (await this.store.all())
+      .filter((s) => s.messages.length)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     const now = this.now();
     const pad = (n) => String(n).padStart(2, '0');
     const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
@@ -227,10 +248,10 @@ export class Engine {
       calibration: calibration(sessions),
       due: sessions
         .filter((s) => s.act && !s.act.result && s.act.checkDate <= today)
-        .map((s) => ({ id: s.id, name: s.work.name, belief: s.act.belief, checkDate: s.act.checkDate })),
+        .map((s) => ({ id: s.id, name: s.title, belief: s.act.belief, checkDate: s.act.checkDate })),
       sessions: sessions.map((s) => ({
         id: s.id,
-        name: s.work.name,
+        name: s.title || '無題',
         createdAt: s.createdAt,
         previousId: s.previousId,
         total: stretchScore(s).total,
@@ -240,20 +261,14 @@ export class Engine {
   }
 }
 
-function verifyCheck(raw, answers) {
-  const source = Object.values(answers).join('\n');
+function verifyCheck(raw, source) {
   const verified = {};
   for (const key of ['doubted', 'evidence', 'self_found']) {
     const c = raw[key] ?? {};
     const ok = Boolean(c.met) && quoteExists(c.evidence_quote, source);
     verified[key] = { met: ok, evidence_quote: ok ? c.evidence_quote : '', note: c.note ?? '' };
   }
-  verified.sealed_review = {};
-  for (const role of Object.keys(ROLES)) {
-    const c = raw.sealed_review?.[role] ?? {};
-    const ok = Boolean(c.self_reached) && quoteExists(c.evidence_quote, source);
-    verified.sealed_review[role] = { self_reached: ok, evidence_quote: ok ? c.evidence_quote : '' };
-  }
+  verified.reached = (raw.reached ?? []).filter((r) => quoteExists(r.evidence_quote, source));
   verified.next_gap = raw.next_gap ?? '';
   return verified;
 }
