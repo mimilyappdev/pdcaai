@@ -88,7 +88,9 @@ export function summarize(cycle) {
     self,
     hint: count('hint'),
     ai: count('ai'),
-    ownOnly: cycle.own.filter((o) => !cycle.items.some((i) => i.ownId === o.id)).length,
+    ownOnly: cycle.own.filter((o) => o.phase === 'free' && !cycle.items.some((i) => i.ownId === o.id)).length,
+    // ヒントのあとに出た、AIの項目とも重ならない自分の検討事項。ヒントで考えが広がった数。
+    spread: cycle.own.filter((o) => o.phase === 'hint' && !cycle.items.some((i) => i.ownId === o.id)).length,
     selfRate: total ? Math.round((self / total) * 100) : null,
     confidenceBefore: cycle.confidenceBefore,
     confidenceAfter: cycle.confidenceAfter ?? null,
@@ -105,9 +107,12 @@ export function buildCycle(input, book, now = new Date()) {
     text: str(o.text, '自分の検討事項'),
     phase: o.phase === 'hint' ? 'hint' : 'free',
   }));
+  // 本人の1つの答えが一致するのは、AIの1項目までにする。
+  const used = new Set();
   const items = (input.items ?? []).slice(0, LIMIT.items).map((it, i) => {
     if (!Object.hasOwn(LENSES, it.lens)) throw new Error(`観点 ${it.lens} は登録されていません`);
-    const match = it.quote ? own.find((o) => quoteIn(it.quote, o.text)) : null;
+    const match = it.quote ? own.find((o) => !used.has(o.id) && quoteIn(it.quote, o.text)) : null;
+    if (match) used.add(match.id);
     return {
       id: `a${i + 1}`,
       lens: it.lens,
@@ -164,7 +169,8 @@ async function main([command, arg]) {
       self: cycle.items.filter((i) => i.status === 'self').map((i) => i.item),
       hint: cycle.items.filter((i) => i.status === 'hint').map((i) => i.item),
       ai: cycle.items.filter((i) => i.status === 'ai').map((i) => ({ id: i.id, lens: LENSES[i.lens], item: i.item, why: i.why, check: i.check })),
-      ownOnly: cycle.own.filter((o) => !cycle.items.some((i) => i.ownId === o.id)).map((o) => o.text),
+      ownOnly: cycle.own.filter((o) => o.phase === 'free' && !cycle.items.some((i) => i.ownId === o.id)).map((o) => o.text),
+      spread: cycle.own.filter((o) => o.phase === 'hint' && !cycle.items.some((i) => i.ownId === o.id)).map((o) => o.text),
     };
   }
   if (command === 'update') {

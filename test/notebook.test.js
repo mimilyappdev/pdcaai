@@ -22,6 +22,16 @@ test('引用が本人の答えにあれば自分で、ヒント後の答えな�
   assert.deepEqual([s.total, s.self, s.hint, s.ai, s.ownOnly, s.selfRate], [4, 1, 1, 2, 1, 25]);
 });
 
+test('1つの答えはAIの1項目にしか一致せず、ヒント後の重ならない答えはヒントで広がったに数える', () => {
+  const book = { cycles: [] };
+  const c = addCycle(book,
+    [{ text: '季節で仕込み量が変わる', phase: 'free' }, { text: '土日で締め日がずれる', phase: 'hint' }],
+    [item('breaker', '季節で仕込み量'), item('misreading', '季節で仕込み量')]);
+  assert.deepEqual(c.items.map((i) => i.status), ['self', 'ai']);
+  const s = summarize(c);
+  assert.deepEqual([s.ownOnly, s.spread], [0, 1]);
+});
+
 test('引用の確認は空白と全角半角の違いを無視し、1文字だけの引用は認めない', () => {
   assert.equal(quoteIn('Ｐ Ｄ Ｆ', 'PDFで渡す'), true);
   assert.equal(quoteIn('人', '前任の人'), false);

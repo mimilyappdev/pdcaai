@@ -154,3 +154,4 @@ button.ghost, .button.ghost { color: var(--ink); background: transparent; border
 .growth-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .bar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; margin-top: 6px; }
 .bar span { display: block; height: 100%; background: #2a9d8f; }
+.tag-spread { --dot: #9b5de5; --dot-line: #6a2fb0; }

@@ -48,7 +48,7 @@ export function buildTree(sessions) {
   return nodes;
 }
 
-export const NOTE_TAGS = { self: '自分で出せた', own: '自分だけ', hint: 'ヒントで', ai: 'AIで気づいた', skip: 'やらない', none: '作品・観点' };
+export const NOTE_TAGS = { self: '自分で出せた', own: '自分だけ', spread: 'ヒントで広がった', hint: 'ヒントで', ai: 'AIで気づいた', skip: 'やらない', none: '作品・観点' };
 
 // 観点帳の周回を古い順に受け取り、作品→観点→検討事項のツリーにする。次の周回の根は前の根の上に伸びる。
 export function buildNotebookTree(cycles, lensNames) {
@@ -72,7 +72,8 @@ export function buildNotebookTree(cycles, lensNames) {
     const ownOnly = c.own.filter((o) => !c.items.some((i) => i.ownId === o.id));
     if (ownOnly.length) {
       add('own', 'root', 'lens', '自分だけ', 'AIの観点役が出さなかったもの', 'none');
-      ownOnly.forEach((o) => add(o.id, 'own', 'item', o.text, o.text, 'own'));
+      ownOnly.forEach((o) => add(o.id, 'own', 'item', o.text, o.phase === 'hint' ? `${o.text}
+（ヒントで広がった）` : o.text, o.phase === 'hint' ? 'spread' : 'own'));
     }
     previous = `${c.id}/root`;
   }

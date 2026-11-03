@@ -414,7 +414,7 @@ async function notebookView() {
         h('div', { class: 'growth-head' }, h('b', {}, s.project), h('span', { class: 'muted' }, new Date(s.createdAt).toLocaleDateString('ja-JP'))),
         h('div', { class: 'bar', role: 'img', 'aria-label': `自分で出せた割合 ${pctText(s.selfRate)}` },
           h('span', { style: `width:${s.selfRate ?? 0}%` })),
-        h('p', {}, `自分で ${s.self} / ヒントで ${s.hint} / AIだけ ${s.ai}（全${s.total}件、自分で出せた割合 ${pctText(s.selfRate)}）`, s.ownOnly ? ` / 自分だけ ${s.ownOnly}` : ''),
+        h('p', {}, `自分で ${s.self} / ヒントで ${s.hint} / AIだけ ${s.ai}（全${s.total}件、自分で出せた割合 ${pctText(s.selfRate)}）`, s.ownOnly ? ` / 自分だけ ${s.ownOnly}` : '', s.spread ? ` / ヒントで広がった ${s.spread}` : ''),
         h('p', { class: 'muted' }, `最初の自信 ${s.confidenceBefore}% → 見直し ${pctText(s.confidenceAfter)}　思い込みのズレ ${s.selfRate == null ? '-' : `${s.confidenceBefore - s.selfRate}pt`}`))))) : null,
     h('section', { class: 'card' },
       h('h2', {}, '補助輪の状態'),
