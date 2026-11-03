@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { Engine, InputError, publicView } from './engine.js';
 import { chooseProvider } from './providers.js';
 import { JsonStore } from './store.js';
+import * as notebook from '../plugin/skills/pdcaai/scripts/notebook.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const PUBLIC = join(ROOT, 'public');
@@ -39,6 +40,10 @@ async function route(engine, req, res, providerName) {
   const { pathname } = new URL(req.url, 'http://localhost');
   if (req.method === 'GET' && pathname === '/api/meta') return send(res, 200, { provider: providerName });
   if (req.method === 'GET' && pathname === '/api/ledger') return send(res, 200, await engine.ledger());
+  if (req.method === 'GET' && pathname === '/api/notebook') {
+    const book = await notebook.load();
+    return send(res, 200, { cycles: book.cycles, stats: notebook.stats(book), hints: notebook.hints(book), lenses: notebook.LENSES });
+  }
   const m = pathname.match(/^\/api\/sessions(?:\/([\w-]+)(?:\/([\w-]+)(?:\/(\w+))?)?)?$/);
   if (m) {
     const [, id, action, role] = m;

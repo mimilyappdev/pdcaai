@@ -1,4 +1,4 @@
-import { TAGS, buildTree, layoutTree } from '/tree.js';
+import { NOTE_TAGS, TAGS, buildNotebookTree, buildTree, layoutTree } from '/tree.js';
 
 const app = document.getElementById('app');
 const treeBox = document.getElementById('tree');
@@ -46,15 +46,37 @@ function shortLabel(text) {
 }
 
 function renderTree() {
+  if (!tree.chain.length) return drawTree(null);
+  drawTree({
+    nodes: buildTree(tree.chain),
+    tags: TAGS,
+    title: '思考ツリー',
+    redraw: renderTree,
+    detail: (selected) => (selected ? h('div', { class: 'detail' },
+      h('b', {}, selected.label), h('p', {}, selected.text),
+      selected.kind.startsWith('locked') ? null : h('label', {}, '自分の分類',
+        h('select', {
+          onchange: async (e) => {
+            const updated = await api(`sessions/${selected.sessionId}/tags`, { node: selected.local, tag: e.target.value });
+            tree.chain = tree.chain.map((s) => (s.id === updated.id ? updated : s));
+            renderTree();
+          },
+        }, Object.entries(TAGS).map(([k, v]) => h('option', { value: k, selected: k === selected.tag }, v)))),
+    ) : h('p', { class: 'muted' }, '丸を選ぶと内容を確認し、分類を直せます。')),
+  });
+}
+
+// ツリー欄の描画。会話の思考ツリーと観点帳のツリーで共通に使う。
+function drawTree(spec) {
   const shell = document.getElementById('shell');
-  if (!tree.chain.length) {
+  if (!spec) {
     treeBox.hidden = true;
     shell.classList.remove('with-tree');
     return;
   }
   treeBox.hidden = false;
   shell.classList.add('with-tree');
-  const { nodes, width, depth } = layoutTree(buildTree(tree.chain));
+  const { nodes, width, depth } = layoutTree(spec.nodes);
   const cellX = 78;
   const cellY = 76;
   const w = Math.max(width * cellX, 320);
@@ -71,36 +93,25 @@ function renderTree() {
   const dots = nodes.map((n) => {
     const p = pos(n);
     const fresh = !tree.known.has(n.id);
-    const name = `${n.label}: ${n.text}（${TAGS[n.tag]}）`;
+    const name = `${n.label}: ${n.text}（${spec.tags[n.tag]}）`;
     const g = svg('g', {
       class: `node tag-${n.tag} kind-${n.kind}${fresh ? ' fresh' : ''}${tree.selected === n.id ? ' selected' : ''}`,
       transform: `translate(${p.x} ${p.y})`, tabindex: 0, role: 'button', 'aria-label': name,
     }, svg('title', {}, name), svg('circle', { r: n.kind === 'root' ? 13 : 10 }), svg('text', { y: 25, 'text-anchor': 'middle' }, shortLabel(n.label)));
-    const pick = () => { tree.selected = n.id; renderTree(); };
+    const pick = () => { tree.selected = n.id; spec.redraw(); };
     g.addEventListener('click', pick);
     g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
     return g;
   });
   nodes.forEach((n) => tree.known.add(n.id));
-  const legend = h('div', { class: 'legend' }, Object.entries(TAGS).map(([k, v]) => h('span', { class: `chip tag-${k}` }, v)));
+  const legend = h('div', { class: 'legend' }, Object.entries(spec.tags).map(([k, v]) => h('span', { class: `chip tag-${k}` }, v)));
   const scroller = h('div', { class: 'tree-scroll' });
-  scroller.append(svg('svg', { viewBox: `0 0 ${w} ${height}`, width: w, height, role: 'img', 'aria-label': '思考ツリー' }, ...lines, ...dots));
-  const selected = byId.get(tree.selected);
-  const detail = selected ? h('div', { class: 'detail' },
-    h('b', {}, selected.label), h('p', {}, selected.text),
-    selected.kind.startsWith('locked') ? null : h('label', {}, '自分の分類',
-      h('select', {
-        onchange: async (e) => {
-          const updated = await api(`sessions/${selected.sessionId}/tags`, { node: selected.local, tag: e.target.value });
-          tree.chain = tree.chain.map((s) => (s.id === updated.id ? updated : s));
-          renderTree();
-        },
-      }, Object.entries(TAGS).map(([k, v]) => h('option', { value: k, selected: k === selected.tag }, v)))),
-  ) : h('p', { class: 'muted' }, '丸を選ぶと内容を確認し、分類を直せます。');
+  scroller.append(svg('svg', { viewBox: `0 0 ${w} ${height}`, width: w, height, role: 'img', 'aria-label': spec.title }, ...lines, ...dots));
+  const detail = spec.detail(byId.get(tree.selected));
   // 描き直しても位置を保ち、新しい枝が出たときだけそこへ移動する。
   const previous = treeBox.querySelector('.tree-scroll');
   const keep = previous ? [previous.scrollLeft, previous.scrollTop] : null;
-  treeBox.replaceChildren(h('h2', {}, '思考ツリー'), legend, scroller, detail);
+  treeBox.replaceChildren(h('h2', {}, spec.title), legend, scroller, detail);
   const newest = [...scroller.querySelectorAll('.node.fresh')].at(-1);
   if (newest) newest.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   else if (keep) [scroller.scrollLeft, scroller.scrollTop] = keep;
@@ -154,7 +165,7 @@ async function home() {
   show(
     h('h1', {}, '「これで100点」を、\n話しながら110点へ。'),
     h('p', { class: 'lead' }, '一言ずつ話すだけで大丈夫です。話した内容は思考ツリーに育ち、Claudeの見立ては少し話してから開きます。'),
-    h('p', {}, h('a', { class: 'button', href: '#/new' }, '話しはじめる')),
+    h('p', {}, h('a', { class: 'button', href: '#/new' }, '話しはじめる'), ' ', h('a', { class: 'button ghost', href: '#/notebook' }, '観点帳を見る')),
     ledger.due.length ? h('section', { class: 'card due' },
       h('h2', {}, '結果を確かめる日です'),
       h('ul', { class: 'list' }, ledger.due.map((d) => h('li', {},
@@ -378,11 +389,48 @@ function actDone(s) {
   );
 }
 
+const LEVEL_LABEL = { 2: '補助輪 強（見落とした例を出す）', 1: '補助輪 弱（観点名だけ）' };
+
+async function notebookView() {
+  setChain([]);
+  const { cycles, stats, hints, lenses } = await api('notebook');
+  const redraw = () => drawTree(cycles.length ? {
+    nodes: buildNotebookTree(cycles, lenses),
+    tags: NOTE_TAGS,
+    title: '観点帳ツリー',
+    redraw,
+    detail: (n) => (n ? h('div', { class: 'detail' }, h('b', {}, n.label), h('p', {}, n.text))
+      : h('p', { class: 'muted' }, '丸を選ぶと内容を確認できます。下の根から上へ、周回ごとに伸びます。')),
+  } : null);
+  redraw();
+  const pctText = (v) => (v == null ? '-' : `${v}%`);
+  show(
+    h('h1', {}, '観点帳'),
+    h('p', { class: 'lead' }, '自分で先に出した検討事項と、AIの観点役だけが出したものの記録です。自分で出せるようになった観点から、ヒント（補助輪）が外れていきます。'),
+    cycles.length ? null : h('p', { class: 'muted' }, 'まだ記録はありません。Claude Code で pdcaai スキルを使うと、ここに積まれます。'),
+    stats.length ? h('section', { class: 'card' },
+      h('h2', {}, '周回ごとの伸び'),
+      h('ul', { class: 'growth' }, stats.map((s) => h('li', {},
+        h('div', { class: 'growth-head' }, h('b', {}, s.project), h('span', { class: 'muted' }, new Date(s.createdAt).toLocaleDateString('ja-JP'))),
+        h('div', { class: 'bar', role: 'img', 'aria-label': `自分で出せた割合 ${pctText(s.selfRate)}` },
+          h('span', { style: `width:${s.selfRate ?? 0}%` })),
+        h('p', {}, `自分で ${s.self} / ヒントで ${s.hint} / AIだけ ${s.ai}（全${s.total}件、自分で出せた割合 ${pctText(s.selfRate)}）`, s.ownOnly ? ` / 自分だけ ${s.ownOnly}` : ''),
+        h('p', { class: 'muted' }, `最初の自信 ${s.confidenceBefore}% → 見直し ${pctText(s.confidenceAfter)}　思い込みのズレ ${s.selfRate == null ? '-' : `${s.confidenceBefore - s.selfRate}pt`}`))))) : null,
+    h('section', { class: 'card' },
+      h('h2', {}, '補助輪の状態'),
+      hints.length
+        ? h('ul', { class: 'list' }, hints.map((x) => h('li', {}, h('b', {}, x.name), ` ${LEVEL_LABEL[x.level]}`, h('div', { class: 'muted' }, `この観点で自分で出せた割合 ${x.selfRate}%`))))
+        : h('p', { class: 'muted' }, cycles.length ? '補助輪が必要な観点はありません。' : '初回はヒントなしで始めます。')),
+    h('p', {}, h('a', { class: 'button ghost', href: '#/' }, '台帳へ戻る')),
+  );
+}
+
 async function router() {
   const hash = location.hash || '#/';
   try {
     const m = hash.match(/^#\/s\/([\w-]+)$/);
     if (hash === '#/new') newSession();
+    else if (hash === '#/notebook') await notebookView();
     else if (m) await session(m[1]);
     else await home();
   } catch (ex) {

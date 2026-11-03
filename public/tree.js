@@ -48,6 +48,37 @@ export function buildTree(sessions) {
   return nodes;
 }
 
+export const NOTE_TAGS = { self: '自分で出せた', own: '自分だけ', hint: 'ヒントで', ai: 'AIで気づいた', skip: 'やらない', none: '作品・観点' };
+
+// 観点帳の周回を古い順に受け取り、作品→観点→検討事項のツリーにする。次の周回の根は前の根の上に伸びる。
+export function buildNotebookTree(cycles, lensNames) {
+  const nodes = [];
+  let previous = null;
+  for (const c of cycles) {
+    const add = (local, parent, kind, label, text, tag) => {
+      nodes.push({ id: `${c.id}/${local}`, cycleId: c.id, local, parent: parent && (parent.includes('/') ? parent : `${c.id}/${parent}`), kind, label, text, tag });
+    };
+    const rate = c.items.length ? Math.round((c.items.filter((i) => i.status === 'self').length / c.items.length) * 100) : 0;
+    add('root', previous, 'root', c.project, `最初の自信 ${c.confidenceBefore}% / 自分で出せた割合 ${rate}%`, 'none');
+    for (const lens of Object.keys(lensNames)) {
+      const items = c.items.filter((i) => i.lens === lens);
+      if (!items.length) continue;
+      add(lens, 'root', 'lens', lensNames[lens], `${items.length}件`, 'none');
+      for (const i of items) {
+        const own = c.own.find((o) => o.id === i.ownId);
+        add(i.id, lens, 'item', i.item, [i.why, own ? `自分の言葉: ${own.text}` : '', i.check ? `確かめ方: ${i.check}` : ''].filter(Boolean).join('\n'), i.decision === 'skip' ? 'skip' : i.status);
+      }
+    }
+    const ownOnly = c.own.filter((o) => !c.items.some((i) => i.ownId === o.id));
+    if (ownOnly.length) {
+      add('own', 'root', 'lens', '自分だけ', 'AIの観点役が出さなかったもの', 'none');
+      ownOnly.forEach((o) => add(o.id, 'own', 'item', o.text, o.text, 'own'));
+    }
+    previous = `${c.id}/root`;
+  }
+  return nodes;
+}
+
 // 根を下に置き、葉が上へ広がる配置。単位は枠。描画側でピクセルに変換する。
 export function layoutTree(nodes) {
   const children = new Map();

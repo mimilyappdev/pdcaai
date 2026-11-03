@@ -52,7 +52,16 @@ Claudeで動かす場合は次のどちらかを使います。`ANTHROPIC_API_KE
 npm start
 ```
 
-Claude Code だけで使う場合は、このリポジトリで `/pdcaai` を実行します。
+## Claude Code プラグイン
+
+作り始める・仕上げる瞬間に使う“ワンモア”スキルです。本人が先に検討事項を出し、観点役のサブエージェント4人（初見の客、壊し屋、お金と運用、読み違い）と突き合わせます。見落とした観点は観点帳（`~/.pdcaai/notebook.json`）に積まれ、自分で出せるようになった観点からヒントが減っていきます。「これで作って」「完成」などの発言にはフックが1回だけ声をかけます。
+
+```bash
+claude plugin marketplace add mimilyappdev/pdcaai
+claude plugin install pdcaai@pdcaai
+```
+
+観点帳のツリーと伸びは `npm start` のあと `http://localhost:3210/#/notebook` で見られます。
 
 ## データとセキュリティ
 
@@ -66,7 +75,7 @@ Claude Code だけで使う場合は、このリポジトリで `/pdcaai` を実
 - `src/prompts.js` プロンプトと出力スキーマ
 - `src/providers.js` Claude API / Claude Code / デモの切り替え
 - `public/` 依存なしの画面
-- `.claude/skills/pdcaai/` Claude Code用スキル
+- `plugin/` Claude Code プラグイン（スキル、観点役サブエージェント、フック、観点帳スクリプト）
 
 ## ライセンス
 

@@ -1,0 +1,8 @@
+{
+  "name": "pdcaai",
+  "version": "0.2.0",
+  "description": "作り始める瞬間の“ワンモア”スキル。自分が先に検討事項を出し、AIの観点役4人と突き合わせて見落としを補い、自分で気づける割合を伸ばす。",
+  "author": { "name": "mimilyappdev" },
+  "repository": "https://github.com/mimilyappdev/pdcaai",
+  "license": "MIT"
+}

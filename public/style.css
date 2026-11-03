@@ -143,3 +143,14 @@ button.ghost, .button.ghost { color: var(--ink); background: transparent; border
 .node.kind-locked.ready circle { stroke: #f2c14e; stroke-width: 4; animation: glow 1.6s ease-in-out infinite alternate; }
 @keyframes glow { from { stroke-opacity: .35; } to { stroke-opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .node.kind-locked.ready circle { animation: none; } }
+.tag-self { --dot: #2a9d8f; --dot-line: #1b6f65; }
+.tag-own { --dot: #3a4fa3; --dot-line: #283777; }
+.tag-hint { --dot: #f2c14e; --dot-line: #9a7412; }
+.tag-ai { --dot: #e4572e; --dot-line: #a33413; }
+.tag-skip { --dot: #c9c4b6; --dot-line: #8d8878; }
+.node.kind-lens circle { fill: var(--card); stroke: var(--sub); }
+.growth { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+.growth p { margin: 4px 0 0; }
+.growth-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.bar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; margin-top: 6px; }
+.bar span { display: block; height: 100%; background: #2a9d8f; }
