@@ -1,4 +1,4 @@
-import { NOTE_TAGS, TAGS, buildNotebookTree, buildTree, layoutTree } from '/tree.js';
+import { NOTE_TAGS, TAGS, buildTree, layoutGrowthTree, layoutTree } from '/tree.js';
 
 const app = document.getElementById('app');
 const treeBox = document.getElementById('tree');
@@ -389,20 +389,64 @@ function actDone(s) {
   );
 }
 
+const LEAF_PATH = 'M-11 0 Q0 -8 11 0 Q0 8 -11 0Z';
+
+function leafShape(shape) {
+  if (shape === 'bud') return svg('circle', { r: 5.5 });
+  if (shape === 'flower') {
+    return svg('g', {}, ...[0, 72, 144, 216, 288].map((a) => svg('ellipse', { rx: 3.6, ry: 6, transform: `rotate(${a}) translate(0 -5)` })), svg('circle', { r: 2.6, class: 'pistil' }));
+  }
+  return svg('path', { d: LEAF_PATH });
+}
+
+// 観点帳を一本の木として描く。開くと幹→枝→葉の順に育つ。
+function drawGrowthTree(cycles, lenses) {
+  const shell = document.getElementById('shell');
+  if (!cycles.length) {
+    treeBox.hidden = true;
+    shell.classList.remove('with-tree');
+    return;
+  }
+  treeBox.hidden = false;
+  shell.classList.add('with-tree');
+  const { width, height, trunk, canopy, branches, leaves } = layoutGrowthTree(cycles, lenses);
+  const crown = canopy.map((c) => svg('ellipse', { cx: c.cx, cy: c.cy, rx: c.rx, ry: c.ry, class: 'canopy' }));
+  const detail = h('div', { class: 'detail' }, h('p', { class: 'muted' }, '葉・つぼみ・花を選ぶと内容を確認できます。下の根元から、周回ごとに上へ伸びます。'));
+  const pick = (leaf) => detail.replaceChildren(h('b', {}, `${leaf.lens}・${NOTE_TAGS[leaf.tag]}`), h('p', {}, leaf.text));
+  const ground = svg('path', { d: `M${width / 2 - 70} ${trunk[0].y1 + 2} Q${width / 2} ${trunk[0].y1 - 6} ${width / 2 + 70} ${trunk[0].y1 + 2}`, class: 'ground' });
+  const trunkEls = trunk.flatMap((t, i) => [
+    svg('line', { x1: t.x, y1: t.y1, x2: t.x, y2: t.y2, 'stroke-width': t.width, class: 'trunk', style: `animation-delay:${i * 0.5}s` }),
+    svg('text', { x: 8, y: t.y1 - 8, class: 'ring' }, `${t.label}`),
+  ]);
+  const branchEls = branches.flatMap((b) => {
+    const order = trunk.findIndex((t) => t.cycleId === b.cycleId);
+    return [
+      svg('path', { d: `M${b.x0} ${b.y0} Q${b.qx} ${b.qy} ${b.x1} ${b.y1}`, class: 'branch', pathLength: 1, style: `animation-delay:${order * 0.5 + 0.25}s` }),
+      svg('text', { x: b.x1 + b.side * 6, y: b.y1 + 4, 'text-anchor': b.side > 0 ? 'start' : 'end', class: 'branch-label' }, b.label),
+    ];
+  });
+  const leafEls = leaves.map((l) => {
+    const name = `${l.lens}・${NOTE_TAGS[l.tag]}: ${l.text}`;
+    const g = svg('g', { class: `leaf tag-${l.tag}`, transform: `translate(${l.x.toFixed(1)} ${l.y.toFixed(1)}) rotate(${l.angle})`, tabindex: 0, role: 'button', 'aria-label': name, style: `--delay:${(l.order / 100) * 0.5 + 0.55}s` }, svg('title', {}, name), leafShape(l.shape));
+    g.addEventListener('click', () => pick(l));
+    g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(l); } });
+    return g;
+  });
+  const legend = h('div', { class: 'legend' },
+    Object.entries(NOTE_TAGS).filter(([k]) => k !== 'none').map(([k, v]) => h('span', { class: `chip tag-${k}` }, v)),
+    h('span', { class: 'muted shape-note' }, '葉=自分の考え / つぼみ=AIの気づき / 花=ヒントで広がった'));
+  const scroller = h('div', { class: 'tree-scroll' });
+  scroller.append(svg('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': '観点帳の木', class: 'growth-tree', style: `max-width:${width}px` }, ...crown, ground, ...trunkEls, ...branchEls, ...leafEls));
+  treeBox.replaceChildren(h('h2', {}, '観点帳の木'), legend, scroller, detail);
+  scroller.scrollTop = scroller.scrollHeight;
+}
+
 const LEVEL_LABEL = { 2: '補助輪 強（見落とした例を出す）', 1: '補助輪 弱（観点名だけ）' };
 
 async function notebookView() {
   setChain([]);
   const { cycles, stats, hints, lenses } = await api('notebook');
-  const redraw = () => drawTree(cycles.length ? {
-    nodes: buildNotebookTree(cycles, lenses),
-    tags: NOTE_TAGS,
-    title: '観点帳ツリー',
-    redraw,
-    detail: (n) => (n ? h('div', { class: 'detail' }, h('b', {}, n.label), h('p', {}, n.text))
-      : h('p', { class: 'muted' }, '丸を選ぶと内容を確認できます。下の根から上へ、周回ごとに伸びます。')),
-  } : null);
-  redraw();
+  drawGrowthTree(cycles, lenses);
   const pctText = (v) => (v == null ? '-' : `${v}%`);
   show(
     h('h1', {}, '観点帳'),

@@ -50,34 +50,52 @@ export function buildTree(sessions) {
 
 export const NOTE_TAGS = { self: '自分で出せた', own: '自分だけ', spread: 'ヒントで広がった', hint: 'ヒントで', ai: 'AIで気づいた', skip: 'やらない', none: '作品・観点' };
 
-// 観点帳の周回を古い順に受け取り、作品→観点→検討事項のツリーにする。次の周回の根は前の根の上に伸びる。
-export function buildNotebookTree(cycles, lensNames) {
-  const nodes = [];
-  let previous = null;
-  for (const c of cycles) {
-    const add = (local, parent, kind, label, text, tag) => {
-      nodes.push({ id: `${c.id}/${local}`, cycleId: c.id, local, parent: parent && (parent.includes('/') ? parent : `${c.id}/${parent}`), kind, label, text, tag });
-    };
-    const rate = c.items.length ? Math.round((c.items.filter((i) => i.status === 'self').length / c.items.length) * 100) : 0;
-    add('root', previous, 'root', c.project, `最初の自信 ${c.confidenceBefore}% / 自分で出せた割合 ${rate}%`, 'none');
-    for (const lens of Object.keys(lensNames)) {
-      const items = c.items.filter((i) => i.lens === lens);
-      if (!items.length) continue;
-      add(lens, 'root', 'lens', lensNames[lens], `${items.length}件`, 'none');
-      for (const i of items) {
-        const own = c.own.find((o) => o.id === i.ownId);
-        add(i.id, lens, 'item', i.item, [i.why, own ? `自分の言葉: ${own.text}` : '', i.check ? `確かめ方: ${i.check}` : ''].filter(Boolean).join('\n'), i.decision === 'skip' ? 'skip' : i.status);
-      }
-    }
+// 観点帳を一本の木として配置する。周回ごとに幹が1段ずつ上へ伸び、各段からAI社員ごとの枝が左右に開く。
+// 葉の形は区分ごとに変える（自分の考え=葉、AIの気づき=つぼみ、ヒントで広がった=花）。色が見分けにくい人にも区別できるように。
+export const LEAF_SHAPE = { self: 'leaf', own: 'leaf', hint: 'leaf', spread: 'flower', ai: 'bud', skip: 'bud' };
+
+export function layoutGrowthTree(cycles, lensNames, { width = 380, segment = 170, margin = 40 } = {}) {
+  const cx = width / 2;
+  const height = margin * 2 + Math.max(cycles.length, 1) * segment + 30;
+  const trunk = [];
+  const canopy = [];
+  const branches = [];
+  const leaves = [];
+  cycles.forEach((c, ci) => {
+    const base = height - margin - ci * segment;
+    const top = base - segment;
+    // 幹は周回を重ねるほど下の段が太くなる（年輪のように）。
+    canopy.push({ cycleId: c.id, cx, cy: base - segment * 0.55, rx: width / 2 - 14, ry: segment * 0.62 });
+    trunk.push({ cycleId: c.id, label: `${ci + 1}周目`, project: c.project, x: cx, y1: base, y2: top, width: 4 + (cycles.length - ci) * 2.5 });
+    const groups = Object.keys(lensNames)
+      .map((lens) => ({ key: lens, label: lensNames[lens], items: c.items.filter((i) => i.lens === lens).map((i) => ({ ...i, tag: i.decision === 'skip' ? 'skip' : i.status, text: i.item })) }))
+      .filter((g) => g.items.length);
     const ownOnly = c.own.filter((o) => !c.items.some((i) => i.ownId === o.id));
-    if (ownOnly.length) {
-      add('own', 'root', 'lens', '自分だけ', 'AIの観点役が出さなかったもの', 'none');
-      ownOnly.forEach((o) => add(o.id, 'own', 'item', o.text, o.phase === 'hint' ? `${o.text}
-（ヒントで広がった）` : o.text, o.phase === 'hint' ? 'spread' : 'own'));
-    }
-    previous = `${c.id}/root`;
-  }
-  return nodes;
+    if (ownOnly.length) groups.push({ key: 'own', label: '自分だけ', items: ownOnly.map((o) => ({ id: o.id, tag: o.phase === 'hint' ? 'spread' : 'own', text: o.text })) });
+    groups.forEach((g, gi) => {
+      // 左右交互に、下の枝ほど長く、上の枝ほど短く斜め上へ開く。
+      const side = gi % 2 ? 1 : -1;
+      const rank = Math.floor(gi / 2);
+      const perSide = Math.ceil(groups.length / 2);
+      const y0 = base - 18 - (rank / Math.max(perSide, 1)) * (segment - 40) - (side > 0 ? 14 : 0);
+      const reach = (width / 2 - 62) * (1 - rank * 0.12);
+      const x1 = cx + side * reach;
+      const y1 = y0 - 42 - rank * 6;
+      const qx = cx + side * reach * 0.42;
+      const qy = y0 - 4;
+      const branch = { id: `${c.id}/${g.key}`, cycleId: c.id, label: g.label, x0: cx, y0, qx, qy, x1, y1, side };
+      branches.push(branch);
+      g.items.forEach((it, k) => {
+        // 葉は枝の先の半分に集め、枝の両側へ交互に付ける。
+        const t = 0.45 + (0.55 * (k + 1)) / (g.items.length + 0.6);
+        const px = (1 - t) ** 2 * cx + 2 * (1 - t) * t * qx + t ** 2 * x1;
+        const py = (1 - t) ** 2 * y0 + 2 * (1 - t) * t * qy + t ** 2 * y1;
+        const lift = k % 2 ? 10 : -10;
+        leaves.push({ id: `${c.id}/${it.id}`, cycleId: c.id, branchId: branch.id, lens: g.label, tag: it.tag, shape: LEAF_SHAPE[it.tag] ?? 'leaf', text: it.text, x: px, y: py + lift, angle: side * (-25 + (k % 2 ? 50 : 0)), order: ci * 100 + gi * 10 + k });
+      });
+    });
+  });
+  return { width, height, trunk, canopy, branches, leaves };
 }
 
 // 根を下に置き、葉が上へ広がる配置。単位は枠。描画側でピクセルに変換する。

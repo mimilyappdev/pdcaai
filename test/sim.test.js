@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PERSONAS, runCycle } from '../sim/run.mjs';
+import { PERSONAS, memo, runCycle } from '../sim/run.mjs';
 
 // 決まった答えを返す偽のClaude。どの段階で呼ばれたかを記録する。
 function fakeProvider() {
@@ -36,4 +36,14 @@ test('試験走行は初回はヒントなしで回り、2回目はヒント後�
   const second = await runCycle({ provider, p, task: p.cases[1], book });
   assert.ok(second.hints.length > 0);
   assert.deepEqual(second.cycle.items.map((i) => i.status), ['ai', 'hint', 'ai', 'ai']);
+});
+
+test('振り返りの記憶は初回は空で、周回後は見落とした型と自分の強みを含む', async () => {
+  const provider = fakeProvider();
+  const book = { cycles: [] };
+  assert.equal(memo(book), '');
+  await runCycle({ provider, p: PERSONAS[0], task: PERSONAS[0].cases[0], book, remember: true });
+  const note = memo(book);
+  assert.ok(note.includes('長い入力で崩れる'));
+  assert.ok(note.includes('手順が多い'));
 });

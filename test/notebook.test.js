@@ -81,3 +81,18 @@ test('作り始める・仕上げる瞬間の発言にだけフックが反応�
   assert.equal(shouldNudge('この関数の意味を教えて'), false);
   assert.equal(shouldNudge('pdcaaiで完成を確かめたい'), false);
 });
+
+test('観点帳の木は、周回ごとに幹が上へ伸び、全部の葉が画面内に収まる', async () => {
+  const { layoutGrowthTree } = await import('../public/tree.js');
+  const { LENSES } = await import('../plugin/skills/pdcaai/scripts/notebook.mjs');
+  const book = { cycles: [] };
+  addCycle(book, [{ text: 'ない', phase: 'free' }], [item('breaker'), item('misreading')]);
+  addCycle(book, [{ text: '長い入力で崩れる', phase: 'free' }, { text: '別の考え', phase: 'hint' }], [item('breaker', '長い入力')]);
+  const t = layoutGrowthTree(book.cycles, LENSES);
+  assert.equal(t.trunk.length, 2);
+  assert.ok(t.trunk[1].y1 < t.trunk[0].y1);
+  assert.ok(t.trunk[0].width > t.trunk[1].width);
+  assert.equal(t.leaves.length, 3 + 2);
+  assert.deepEqual(t.leaves.filter((l) => l.cycleId === 'c2').map((l) => l.shape), ['leaf', 'flower']);
+  assert.ok(t.leaves.every((l) => l.x > 0 && l.x < t.width && l.y > 0 && l.y < t.height));
+});

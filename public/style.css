@@ -32,10 +32,10 @@ main.with-tree { max-width: 1240px; display: grid; grid-template-columns: minmax
 .legend { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
 .chip::before { content: ""; width: 11px; height: 11px; border-radius: 50%; background: var(--dot); border: 2px solid var(--dot-line); }
-.tag-discovery { --dot: #e4572e; --dot-line: #a33413; }
-.tag-thought { --dot: #2a9d8f; --dot-line: #1b6f65; }
-.tag-pending { --dot: #f2c14e; --dot-line: #9a7412; }
-.tag-conclusion { --dot: #3a4fa3; --dot-line: #283777; }
+.tag-discovery { --dot: #CC79A7; --dot-line: #8E4A73; }
+.tag-thought { --dot: #009E73; --dot-line: #006B4E; }
+.tag-pending { --dot: #F0E442; --dot-line: #9A8F12; }
+.tag-conclusion { --dot: #0072B2; --dot-line: #004C78; }
 .tag-none { --dot: #fff; --dot-line: #8d8878; }
 .node { cursor: pointer; }
 .node circle { fill: var(--dot); stroke: var(--dot-line); stroke-width: 2; }
@@ -143,15 +143,36 @@ button.ghost, .button.ghost { color: var(--ink); background: transparent; border
 .node.kind-locked.ready circle { stroke: #f2c14e; stroke-width: 4; animation: glow 1.6s ease-in-out infinite alternate; }
 @keyframes glow { from { stroke-opacity: .35; } to { stroke-opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .node.kind-locked.ready circle { animation: none; } }
-.tag-self { --dot: #2a9d8f; --dot-line: #1b6f65; }
-.tag-own { --dot: #3a4fa3; --dot-line: #283777; }
-.tag-hint { --dot: #f2c14e; --dot-line: #9a7412; }
-.tag-ai { --dot: #e4572e; --dot-line: #a33413; }
-.tag-skip { --dot: #c9c4b6; --dot-line: #8d8878; }
+.tag-self { --dot: #009E73; --dot-line: #006B4E; }
+.tag-own { --dot: #0072B2; --dot-line: #004C78; }
+.tag-hint { --dot: #56B4E9; --dot-line: #2B7BAA; }
+.tag-ai { --dot: #E69F00; --dot-line: #9A6A00; }
+.tag-skip { --dot: #BBBBBB; --dot-line: #8A8A8A; }
 .node.kind-lens circle { fill: var(--card); stroke: var(--sub); }
 .growth { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
 .growth p { margin: 4px 0 0; }
 .growth-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .bar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; margin-top: 6px; }
 .bar span { display: block; height: 100%; background: #2a9d8f; }
-.tag-spread { --dot: #9b5de5; --dot-line: #6a2fb0; }
+.tag-spread { --dot: #CC79A7; --dot-line: #8E4A73; }
+
+/* 観点帳の木 */
+.growth-tree .canopy { fill: #009E73; fill-opacity: .07; }
+.growth-tree .ground { fill: none; stroke: #8a6f52; stroke-width: 3; stroke-linecap: round; }
+.growth-tree .trunk { stroke: #7a5236; stroke-linecap: round; animation: rise .5s ease-out both; }
+.growth-tree .ring { font-size: 11px; fill: var(--sub); }
+.growth-tree .branch { fill: none; stroke: #8f6545; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw .6s ease-out forwards; }
+.growth-tree .branch-label { font-size: 11px; fill: var(--sub); }
+.growth-tree .leaf { cursor: pointer; animation: bloom .45s ease-out both; animation-delay: var(--delay); transform-box: fill-box; transform-origin: center; }
+.growth-tree .leaf path, .growth-tree .leaf circle, .growth-tree .leaf ellipse { fill: var(--dot); stroke: var(--dot-line); stroke-width: 1.2; }
+.growth-tree .leaf .pistil { fill: #fff8d6; }
+.growth-tree .leaf:focus-visible path, .growth-tree .leaf:focus-visible circle { stroke: var(--ink); stroke-width: 2.5; }
+.shape-note { display: block; font-size: 12px; margin-top: 4px; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes rise { from { opacity: 0; } to { opacity: 1; } }
+@keyframes bloom { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .growth-tree .trunk, .growth-tree .leaf { animation: none; }
+  .growth-tree .branch { animation: none; stroke-dashoffset: 0; }
+}
+.growth-tree { display: block; width: 100%; height: auto; margin: 0 auto; }
