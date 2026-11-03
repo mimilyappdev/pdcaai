@@ -67,13 +67,14 @@ export function hints(book) {
     const rate = items.filter((i) => i.status === 'self').length / items.length;
     const level = rate < 1 / 3 ? 2 : rate < 2 / 3 ? 1 : 0;
     if (!level) continue;
-    const example = missed.at(-1).item;
+    // 前の題材の項目そのままでは話がつながらないため、題材に依存しない型があればそちらを見せる。
+    const example = missed.at(-1).pattern || missed.at(-1).item;
     out.push({
       lens,
       name,
       level,
       selfRate: Math.round(rate * 100),
-      text: level === 2 ? `「${name}」の観点: 前に「${example}」を見落としています。似たことはありますか？` : `「${name}」の観点で、ほかに気になることはありますか？`,
+      text: level === 2 ? `「${name}」の観点: 前に「${example}」という見落としがありました。今回も当てはまりそうなことはありますか？` : `「${name}」の観点で、ほかに気になることはありますか？`,
     });
   }
   return out;
@@ -117,6 +118,7 @@ export function buildCycle(input, book, now = new Date()) {
       id: `a${i + 1}`,
       lens: it.lens,
       item: str(it.item, '検討事項', 200),
+      pattern: String(it.pattern ?? '').slice(0, 60),
       why: String(it.why ?? '').slice(0, LIMIT.text),
       check: String(it.check ?? '').slice(0, LIMIT.text),
       status: match ? (match.phase === 'free' ? 'self' : 'hint') : 'ai',
