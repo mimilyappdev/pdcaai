@@ -80,6 +80,15 @@ export function hints(book) {
   return out;
 }
 
+// 直近の周回で出た項目と本人の答え。観点役に同じ論点を繰り返させず、本人にも書き直させないために使う。
+export function known(book) {
+  const recent = book.cycles.slice(-WINDOW);
+  return {
+    items: [...new Set(recent.flatMap((c) => c.items.map((i) => i.item)))],
+    said: recent.flatMap((c) => c.own.map((o) => o.text)),
+  };
+}
+
 export function summarize(cycle) {
   const count = (s) => cycle.items.filter((i) => i.status === s).length;
   const total = cycle.items.length;
@@ -159,7 +168,7 @@ async function readInput(path) {
 async function main([command, arg]) {
   const file = notebookPath();
   const book = await load(file);
-  if (command === 'hints') return { notebook: file, cycles: book.cycles.length, hints: hints(book) };
+  if (command === 'hints') return { notebook: file, cycles: book.cycles.length, hints: hints(book), known: known(book) };
   if (command === 'stats') return { notebook: file, cycles: stats(book) };
   if (command === 'record') {
     const cycle = buildCycle(await readInput(arg), book);

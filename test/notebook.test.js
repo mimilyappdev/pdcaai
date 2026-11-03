@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyUpdate, buildCycle, hints, quoteIn, stats, summarize } from '../plugin/skills/pdcaai/scripts/notebook.mjs';
+import { applyUpdate, buildCycle, hints, known, quoteIn, stats, summarize } from '../plugin/skills/pdcaai/scripts/notebook.mjs';
 import { shouldNudge } from '../plugin/hooks/moment.mjs';
 
 const input = (own, items, extra = {}) => ({ project: '引継ぎツール', confidenceBefore: 100, own, items, ...extra });
@@ -30,6 +30,14 @@ test('1つの答えはAIの1項目にしか一致せず、ヒント後の重な�
   assert.deepEqual(c.items.map((i) => i.status), ['self', 'ai']);
   const s = summarize(c);
   assert.deepEqual([s.ownOnly, s.spread], [0, 1]);
+});
+
+test('既出の項目と本人の答えを、重ねずに直近の周回分だけ返す', () => {
+  const book = { cycles: [] };
+  for (let n = 0; n < 4; n += 1) addCycle(book, [{ text: `答え${n}`, phase: 'free' }], [item('breaker'), item('breaker')]);
+  const k = known(book);
+  assert.deepEqual(k.items, ['breakerの項目']);
+  assert.deepEqual(k.said, ['答え1', '答え2', '答え3']);
 });
 
 test('引用の確認は空白と全角半角の違いを無視し、1文字だけの引用は認めない', () => {
