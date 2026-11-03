@@ -69,14 +69,15 @@ export function hints(book) {
     const rate = (items.filter((i) => i.status === 'self').length + recalled) / (items.length + recalled);
     const level = rate < 1 / 3 ? 2 : rate < 2 / 3 ? 1 : 0;
     if (!level) continue;
-    // 前の題材の項目そのままでは話がつながらないため、題材に依存しない型があればそちらを見せる。
-    const example = missed.at(-1).pattern || missed.at(-1).item;
+    // 型だけだと抽象的で伝わりにくく、項目だけだと前の題材に引きずられる。型を主にして、前回の項目を例として添える。
+    const last = missed.at(-1);
+    const example = last.pattern && last.pattern !== last.item ? `「${last.pattern}」（前回の例: ${last.item}）` : `「${last.item}」`;
     out.push({
       lens,
       name,
       level,
       selfRate: Math.round(rate * 100),
-      text: level === 2 ? `「${name}」の観点: 前に「${example}」という見落としがありました。今回も当てはまりそうなことはありますか？` : `「${name}」の観点で、ほかに気になることはありますか？`,
+      text: level === 2 ? `${name}から: 前は${example}を見落としていました。今回の題材だと、どこが当てはまりそうですか？` : `${name}から: ほかに気になることはありますか？`,
     });
   }
   return out;
