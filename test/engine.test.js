@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { Engine, InputError, calibration, publicView, quoteExists } from '../src/engine.js';
 import { mockProvider } from '../src/providers.js';
 import { MemoryStore } from '../src/store.js';
+import { buildTree, layoutTree } from '../public/tree.js';
 
 const work = { name: '在庫メモ', audience: '即売会の出展者', belief: '好評だから完成', evidence: '友人3人が褒めた', confidenceBefore: 100 };
 const answers = {
@@ -149,4 +150,44 @@ test('同じ役を並列で呼んでも、表示と保存の問いが一致す�
   const [a, b] = await Promise.all([engine.reviewer(s.id, 'numbers'), engine.reviewer(s.id, 'numbers')]);
   assert.equal(a.question, b.question);
   assert.equal((await engine.require(s.id)).reviewers.numbers.question, a.question);
+});
+
+test('思考ツリーは問い、入力中の回答、封印の順に育ち、封印の中身を含まない', async () => {
+  const { engine, id } = await ready();
+  const view = publicView(await engine.require(id));
+  const nodes = buildTree([view], { numbers: '母数を数えていない' });
+  assert.ok(nodes.find((n) => n.local === 'ans-numbers' && n.tag === 'thought'));
+  const seal = nodes.find((n) => n.local === 'seal-numbers');
+  assert.equal(seal.kind, 'locked');
+  assert.equal(seal.parent, `${id}/ans-numbers`);
+  assert.equal(JSON.stringify(nodes).includes('声が届いた人だけ'), false);
+});
+
+test('引用された回答は発見に色づき、本人の修正は記録に影響しない', async () => {
+  const { engine, id } = await ready();
+  await engine.submitAnswers(id, answers);
+  let view = publicView(await engine.require(id));
+  const before = view.stretch.total;
+  assert.equal(buildTree([view]).find((n) => n.local === 'ans-numbers').tag, 'discovery');
+  view = await engine.setTag(id, { node: 'seal-opponent', tag: 'discovery' });
+  const node = buildTree([view]).find((n) => n.local === 'seal-opponent');
+  assert.deepEqual([node.tag, node.edited], ['discovery', true]);
+  assert.equal(view.stretch.total, before);
+  await assert.rejects(engine.setTag(id, { node: 'seal-opponent', tag: '__proto__' }), InputError);
+});
+
+test('結果から次の周回へ枝が伸び、根は下、葉は上に並ぶ', async () => {
+  const { engine, id } = await ready();
+  await engine.submitAnswers(id, answers);
+  await engine.submitAct(id, { belief: '説明なしで使える', action: '観察する', signal: '止まる', confidence: 90, confidenceAfter: 70, checkDate: '2026-11-03' });
+  await engine.submitResult(id, { outcome: 'broken', note: '止まった' });
+  const next = await engine.create({ ...work, previousId: id });
+  const chain = await engine.chain(next.id);
+  assert.equal(chain.length, 2);
+  const nodes = buildTree(chain);
+  assert.equal(nodes.find((n) => n.id === `${next.id}/root`).parent, `${id}/result`);
+  const layout = layoutTree(nodes);
+  assert.equal(layout.nodes.length, nodes.length);
+  assert.equal(layout.nodes.find((n) => n.id === `${id}/root`).depth, 0);
+  assert.ok(layout.nodes.find((n) => n.id === `${next.id}/root`).depth > 2);
 });

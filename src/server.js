@@ -45,6 +45,7 @@ async function route(engine, req, res, providerName) {
     if (req.method === 'GET' && id && !action) {
       return send(res, 200, publicView(await engine.require(id)));
     }
+    if (req.method === 'GET' && id && action === 'chain') return send(res, 200, await engine.chain(id));
     if (req.method === 'POST') {
       const body = await readJson(req);
       if (!id) return send(res, 201, await engine.create(body));
@@ -52,6 +53,7 @@ async function route(engine, req, res, providerName) {
       if (action === 'reviewers' && role) return send(res, 200, await engine.reviewer(id, role));
       if (action === 'answers') return send(res, 200, await engine.submitAnswers(id, body));
       if (action === 'act') return send(res, 200, await engine.submitAct(id, body));
+      if (action === 'tags') return send(res, 200, await engine.setTag(id, body));
       if (action === 'result') return send(res, 200, await engine.submitResult(id, body));
     }
   }

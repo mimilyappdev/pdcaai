@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { ROLES, assumptionsPrompt, checkPrompt, reviewerPrompt } from './prompts.js';
+import { TAGS } from '../public/tree.js';
 
 export class InputError extends Error {}
 
@@ -91,6 +92,7 @@ export class Engine {
       answers: null,
       check: null,
       act: null,
+      tags: {},
     };
     await this.store.put(s);
     return publicView(s);
@@ -192,6 +194,28 @@ export class Engine {
     };
     await this.store.put(s);
     return publicView(s);
+  }
+
+  // 色分けは本人が直せる。ここを変えても踏み込みの記録（引用の確認）は変わらない。
+  async setTag(id, input) {
+    const s = await this.require(id);
+    if (!/^[\w-]{1,30}$/.test(input.node ?? '')) throw new InputError('不明な項目です');
+    if (!Object.hasOwn(TAGS, input.tag ?? '')) throw new InputError('不明な分類です');
+    s.tags = { ...s.tags, [input.node]: input.tag };
+    await this.store.put(s);
+    return publicView(s);
+  }
+
+  async chain(id) {
+    const list = [];
+    const seen = new Set();
+    let current = await this.require(id);
+    while (current && !seen.has(current.id)) {
+      seen.add(current.id);
+      list.unshift(publicView(current));
+      current = current.previousId ? await this.store.get(current.previousId) : null;
+    }
+    return list;
   }
 
   async ledger() {

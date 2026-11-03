@@ -1,4 +1,9 @@
+import { TAGS, buildTree, layoutTree } from '/tree.js';
+
 const app = document.getElementById('app');
+const treeBox = document.getElementById('tree');
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const tree = { chain: [], drafts: {}, selected: null, known: new Set() };
 const ROLE_ORDER = ['newcomer', 'numbers', 'opponent'];
 const STEP_NAMES = ['Plan 思い込み', 'Do 自分で考える', 'Check 開封', 'Act 試す'];
 const DRAFT_PREFIX = 'pdcaai-draft-';
@@ -30,6 +35,88 @@ function show(...nodes) {
   app.replaceChildren(...nodes.flat().filter(Boolean));
   window.scrollTo(0, 0);
   app.focus({ preventScroll: true });
+}
+
+function svg(tag, attrs = {}, ...children) {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  el.append(...children);
+  return el;
+}
+
+function shortLabel(text) {
+  return text.length > 7 ? `${text.slice(0, 6)}…` : text;
+}
+
+function renderTree() {
+  if (!tree.chain.length) {
+    treeBox.hidden = true;
+    document.getElementById('shell').classList.remove('with-tree');
+    return;
+  }
+  treeBox.hidden = false;
+  document.getElementById('shell').classList.add('with-tree');
+  const { nodes, width, depth } = layoutTree(buildTree(tree.chain, tree.drafts));
+  const cellX = 78;
+  const cellY = 76;
+  const w = Math.max(width * cellX, 320);
+  const height = (depth + 1) * cellY + 24;
+  const offset = (w - width * cellX) / 2;
+  const pos = (n) => ({ x: offset + n.x * cellX + cellX / 2, y: height - 36 - n.depth * cellY });
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const lines = nodes.filter((n) => byId.has(n.parent)).map((n) => {
+    const a = pos(byId.get(n.parent));
+    const b = pos(n);
+    const my = (a.y + b.y) / 2;
+    return svg('path', { d: `M${a.x} ${a.y} C${a.x} ${my} ${b.x} ${my} ${b.x} ${b.y}`, class: `edge edge-${n.tag}` });
+  });
+  const dots = nodes.map((n) => {
+    const p = pos(n);
+    const fresh = !tree.known.has(n.id);
+    const name = `${n.label}: ${n.text}（${TAGS[n.tag]}）`;
+    const g = svg('g', {
+      class: `node tag-${n.tag} kind-${n.kind}${fresh ? ' fresh' : ''}${tree.selected === n.id ? ' selected' : ''}`,
+      transform: `translate(${p.x} ${p.y})`, tabindex: 0, role: 'button', 'aria-label': name,
+    }, svg('title', {}, name), svg('circle', { r: n.kind === 'root' ? 13 : 10 }), svg('text', { y: 25, 'text-anchor': 'middle' }, shortLabel(n.label)));
+    const pick = () => { tree.selected = n.id; renderTree(); };
+    g.addEventListener('click', pick);
+    g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+    return g;
+  });
+  nodes.forEach((n) => tree.known.add(n.id));
+  const legend = h('div', { class: 'legend' }, Object.entries(TAGS).map(([k, v]) => h('span', { class: `chip tag-${k}` }, v)));
+  const scroller = h('div', { class: 'tree-scroll' });
+  scroller.append(svg('svg', { viewBox: `0 0 ${w} ${height}`, width: w, height, role: 'img', 'aria-label': '思考ツリー' }, ...lines, ...dots));
+  const selected = byId.get(tree.selected);
+  const detail = selected ? h('div', { class: 'detail' },
+    h('b', {}, selected.label), h('p', {}, selected.text),
+    selected.kind === 'locked' ? null : h('label', {}, '自分の分類',
+      h('select', {
+        onchange: async (e) => {
+          const updated = await api(`sessions/${selected.sessionId}/tags`, { node: selected.local, tag: e.target.value });
+          tree.chain = tree.chain.map((s) => (s.id === updated.id ? updated : s));
+          renderTree();
+        },
+      }, Object.entries(TAGS).map(([k, v]) => h('option', { value: k, selected: k === selected.tag }, v)))),
+  ) : h('p', { class: 'muted' }, '丸を選ぶと内容を確認し、分類を直せます。');
+  // 入力のたびに描き直しても位置を保ち、新しい枝が出たときだけそこへ移動する。
+  const previous = treeBox.querySelector('.tree-scroll');
+  const keep = previous ? [previous.scrollLeft, previous.scrollTop] : null;
+  treeBox.replaceChildren(h('h2', {}, '思考ツリー'), legend, scroller, detail);
+  const newest = [...scroller.querySelectorAll('.node.fresh')].at(-1);
+  if (newest) newest.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  else if (keep) [scroller.scrollLeft, scroller.scrollTop] = keep;
+}
+
+function setChain(chain) {
+  tree.chain = chain;
+  tree.drafts = {};
+  renderTree();
+}
+
+function updateCurrent(view) {
+  tree.chain = [...tree.chain.slice(0, -1), view];
+  renderTree();
 }
 
 function steps(active) {
@@ -69,6 +156,7 @@ function form(onsubmit, ...children) {
 }
 
 async function home() {
+  setChain([]);
   const ledger = await api('ledger');
   const c = ledger.calibration;
   show(
@@ -101,6 +189,7 @@ function outcomeLabel(o) {
 }
 
 function newSession(previousId, previousName) {
+  if (!previousId) setChain([]);
   show(
     steps(0),
     h('h2', {}, '何を「もう完成」と思っていますか？'),
@@ -120,7 +209,9 @@ function newSession(previousId, previousName) {
 }
 
 async function session(id) {
-  const s = await api(`sessions/${id}`);
+  const chain = await api(`sessions/${id}/chain`);
+  setChain(chain);
+  const s = chain.at(-1);
   if (s.act) return actDone(s);
   if (s.check) return checkView(s);
   return doView(s);
@@ -132,8 +223,14 @@ function keepDraft(el, id) {
     try { return JSON.parse(localStorage.getItem(DRAFT_PREFIX + id) || '{}'); } catch { return {}; }
   };
   const saved = read()[el.name];
-  if (saved) el.value = saved;
+  if (saved) {
+    el.value = saved;
+    tree.drafts[el.name] = saved;
+    renderTree();
+  }
   el.addEventListener('input', () => {
+    tree.drafts[el.name] = el.value;
+    renderTree();
     try {
       localStorage.setItem(DRAFT_PREFIX + id, JSON.stringify({ ...read(), [el.name]: el.value }));
     } catch { /* 保存できなくても入力は続ける */ }
@@ -156,12 +253,15 @@ async function doView(s) {
   app.append(answerForm);
   try {
     const withAssumptions = await api(`sessions/${s.id}/assumptions`, {});
+    updateCurrent(withAssumptions);
     assumptionsBox.replaceChildren(
       h('h3', {}, 'あなたが置いている前提'),
       h('ul', {}, withAssumptions.assumptions.map((a) => h('li', {}, a.text))),
     );
     const results = await Promise.all(ROLE_ORDER.map(async (role) => {
       const r = await api(`sessions/${s.id}/reviewers/${role}`, {});
+      const current = tree.chain.at(-1);
+      updateCurrent({ ...current, reviewers: { ...current.reviewers, [role]: r } });
       slots[role].replaceChildren(
         h('span', { class: 'who' }, r.label),
         h('p', { class: 'question' }, r.question),
@@ -261,7 +361,7 @@ function actDone(s) {
     ? h('section', { class: 'card' },
       h('h3', {}, `結果: ${outcomeLabel(a.result.outcome)}`),
       h('p', {}, a.result.note),
-      h('p', {}, h('button', { class: 'ghost', type: 'button', onclick: () => newSession(s.id, s.work.name) }, 'この結果から次の周回へ')))
+      h('p', {}, h('button', { class: 'ghost', type: 'button', onclick: () => { window.scrollTo(0, 0); newSession(s.id, s.work.name); } }, 'この結果から次の周回へ')))
     : h('section', { class: 'card' }, h('h3', {}, '結果を記録する'), form(async (data) => {
       await api(`sessions/${s.id}/result`, data);
       await session(s.id);
