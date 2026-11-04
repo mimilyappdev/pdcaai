@@ -1,7 +1,7 @@
 {
   "name": "pdcaai",
   "version": "0.1.0",
-  "description": "100点だと思っている自分の成果物を疑い、自分の頭で110点へ進めるAIストレッチ",
+  "description": "AIだけじゃダメですか？！ 先に自分で考え、AI社員と突き合わせて、自分で気づける範囲を広げる",
   "type": "module",
   "license": "MIT",
   "private": true,
