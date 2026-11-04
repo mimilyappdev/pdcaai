@@ -6,6 +6,8 @@ import { Engine, InputError, publicView } from './engine.js';
 import { chooseProvider } from './providers.js';
 import { JsonStore } from './store.js';
 import * as notebook from '../plugin/skills/pdcaai/scripts/notebook.mjs';
+import { CARDS, finishStretch, startStretch } from './stretch.js';
+import { randomUUID } from 'node:crypto';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const PUBLIC = join(ROOT, 'public');
@@ -36,6 +38,47 @@ async function readJson(req) {
   return body;
 }
 
+// カード版のストレッチャー。AI社員の結果は、本人が書き終えるまでサーバーの中に置いておく。
+const stretches = new Map();
+
+const text = (v, name, max) => {
+  const s = String(v ?? '').trim();
+  if (!s) throw new InputError(`${name}を入れてください`);
+  return s.slice(0, max);
+};
+
+async function stretchRoute(provider, pathname, body) {
+  const m = pathname.match(/^\/api\/stretch(?:\/([\w-]+)\/(answer|feel))?$/);
+  if (!m) throw new InputError('見つかりません');
+  const [, id, action] = m;
+  if (!id) {
+    const project = text(body.project, '作るもの', 200);
+    const summary = String(body.summary ?? '').trim().slice(0, 500);
+    const confidenceBefore = Number(body.confidenceBefore);
+    if (!Number.isInteger(confidenceBefore) || confidenceBefore < 0 || confidenceBefore > 100) throw new InputError('自信は0〜100で入れてください');
+    const book = await notebook.load();
+    const sid = randomUUID();
+    stretches.set(sid, { project, summary, confidenceBefore, pending: startStretch(provider, book, { project, summary }) });
+    return { id: sid, cards: Object.entries(notebook.LENSES).map(([lens, name]) => ({ lens, name, question: CARDS[lens] })) };
+  }
+  const st = stretches.get(id);
+  if (!st) throw new InputError('この回は見つかりません。最初からやり直してください');
+  const book = await notebook.load();
+  if (action === 'answer') {
+    const own = (Array.isArray(body.own) ? body.own : []).map((s) => String(s).trim()).filter(Boolean).slice(0, 30);
+    const cycle = await finishStretch(provider, book, { ...st, own });
+    book.cycles.push(cycle);
+    await notebook.save(book);
+    st.cycleId = cycle.id;
+    return { cycle, summary: notebook.summarize(cycle) };
+  }
+  if (!st.cycleId) throw new InputError('先にカードをめくってください');
+  const cycle = notebook.applyUpdate(book, { id: st.cycleId, feel: body.feel, confidenceAfter: body.confidenceAfter });
+  await notebook.save(book);
+  stretches.delete(id);
+  return { summary: notebook.summarize(cycle) };
+}
+
 async function route(engine, req, res, providerName) {
   const { pathname } = new URL(req.url, 'http://localhost');
   if (req.method === 'GET' && pathname === '/api/meta') return send(res, 200, { provider: providerName });
@@ -44,6 +87,7 @@ async function route(engine, req, res, providerName) {
     const book = await notebook.load();
     return send(res, 200, { cycles: book.cycles, stats: notebook.stats(book), hints: notebook.hints(book), lenses: notebook.LENSES });
   }
+  if (req.method === 'POST' && pathname.startsWith('/api/stretch')) return send(res, 200, await stretchRoute(engine.provider, pathname, await readJson(req)));
   const m = pathname.match(/^\/api\/sessions(?:\/([\w-]+)(?:\/([\w-]+)(?:\/(\w+))?)?)?$/);
   if (m) {
     const [, id, action, role] = m;

@@ -1,15 +1,15 @@
 // 架空の引継ぎ案件で、ペルソナと観点役を自動で回す試験走行。
 // 人間の伸びの証拠ではない。観点役の出し方、突き合わせの判定、ヒントを減らす仕組みの動作確認に使う。
 // 結果は data/sim/ に保存し、本物の観点帳（~/.pdcaai/notebook.json）には混ぜない。
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chooseProvider } from '../src/providers.js';
+import { ITEMS_SCHEMA, JUDGE_SCHEMA, LENS_MODEL, lensPrompt } from '../src/stretch.js';
 import { LENSES, buildCycle, hints, known, stats } from '../plugin/skills/pdcaai/scripts/notebook.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const OUT = join(ROOT, 'data', 'sim');
-const LENS_MODEL = 'claude-sonnet-5-5';
 const PARALLEL = 6;
 
 // 得意と苦手を持つペルソナ。苦手は観点役には伝えない。
@@ -46,22 +46,10 @@ export const PERSONAS = [
   },
 ];
 
-const ITEMS_SCHEMA = {
-  type: 'object',
-  properties: { items: { type: 'array', items: { type: 'object', properties: { item: { type: 'string' }, why: { type: 'string' }, check: { type: 'string' } }, required: ['item', 'why', 'check'], additionalProperties: false } } },
-  required: ['items'],
-  additionalProperties: false,
-};
 const OWN_SCHEMA = {
   type: 'object',
   properties: { answers: { type: 'array', items: { type: 'string' } } },
   required: ['answers'],
-  additionalProperties: false,
-};
-const JUDGE_SCHEMA = {
-  type: 'object',
-  properties: { quotes: { type: 'array', items: { type: 'object', properties: { index: { type: 'integer' }, quote: { type: 'string' }, pattern: { type: 'string' } }, required: ['index', 'quote', 'pattern'], additionalProperties: false } } },
-  required: ['quotes'],
   additionalProperties: false,
 };
 
@@ -75,11 +63,6 @@ function limiter(max) {
     fn().then(resolve, reject).finally(() => { active -= 1; next(); });
   };
   return (fn) => new Promise((resolve, reject) => { queue.push({ fn, resolve, reject }); next(); });
-}
-
-async function lensPrompt(lens) {
-  const text = await readFile(join(ROOT, 'plugin', 'agents', `${lens}.md`), 'utf8');
-  return `${text.replace(/^---[\s\S]*?---\s*/, '')}\n\n出力は items 配列に入れてください。`;
 }
 
 // 人間が前回の振り返りを覚えている状態をまねる。直近の周回で見落とした型と、自分の強みだけを渡す。

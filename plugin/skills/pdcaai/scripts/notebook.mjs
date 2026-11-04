@@ -29,7 +29,7 @@ export async function load(file = notebookPath()) {
   }
 }
 
-async function save(book, file) {
+export async function save(book, file = notebookPath()) {
   await mkdir(dirname(file), { recursive: true });
   const tmp = `${file}.${process.pid}.tmp`;
   await writeFile(tmp, JSON.stringify(book, null, 2));
@@ -122,6 +122,8 @@ export function summarize(cycle) {
     selfRate: total ? Math.round((self / total) * 100) : null,
     confidenceBefore: cycle.confidenceBefore,
     confidenceAfter: cycle.confidenceAfter ?? null,
+    mode: cycle.mode ?? 'skill',
+    feel: cycle.feel ?? null,
   };
 }
 
@@ -167,6 +169,9 @@ export function buildCycle(input, book, now = new Date()) {
     summary: String(input.summary ?? '').slice(0, LIMIT.text),
     confidenceBefore: pct(input.confidenceBefore, '最初の自信'),
     confidenceAfter: null,
+    // スキル（文字）で回したか、カード画面で回したか。考える力の手応えを比べるために残す。
+    mode: input.mode === 'card' ? 'card' : 'skill',
+    feel: null,
     hintsShown: (input.hintsShown ?? []).map((h) => String(h).slice(0, LIMIT.text)),
     own,
     items,
@@ -177,6 +182,12 @@ export function applyUpdate(book, input) {
   const cycle = book.cycles.find((c) => c.id === input.id) ?? book.cycles.at(-1);
   if (!cycle) throw new Error('まだ周回がありません');
   if (input.confidenceAfter != null) cycle.confidenceAfter = pct(input.confidenceAfter, '見直した自信');
+  // 考える力が上がった手応え。-2（下がった）〜 2（上がった）の本人の主観。
+  if (input.feel != null) {
+    const f = Number(input.feel);
+    if (!Number.isInteger(f) || f < -2 || f > 2) throw new Error('手応えは-2〜2の整数で指定してください');
+    cycle.feel = f;
+  }
   for (const [id, d] of Object.entries(input.decisions ?? {})) {
     const item = cycle.items.find((i) => i.id === id);
     if (item && ['do', 'done', 'skip', 'later'].includes(d)) item.decision = d;

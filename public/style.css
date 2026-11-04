@@ -178,3 +178,22 @@ button.ghost, .button.ghost { color: var(--ink); background: transparent; border
 .growth-tree { display: block; width: 100%; height: auto; margin: 0 auto; }
 .growth-tree .leaf.recalled path, .growth-tree .leaf.recalled circle, .growth-tree .leaf.recalled ellipse { stroke: #C99A2E; stroke-width: 3; }
 .recall-note { color: #8a6412; font-weight: 600; }
+
+/* カード版のストレッチャー。表は問いかけ、裏はAI社員の指摘。色は観点帳の木と同じ意味にそろえる。 */
+.stretch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0; }
+.stretch-card { perspective: 900px; min-height: 160px; }
+.stretch-inner { position: relative; display: grid; height: 100%; transition: transform .6s; transform-style: preserve-3d; }
+.stretch-card.flipped .stretch-inner { transform: rotateY(180deg); }
+.stretch-face { grid-area: 1 / 1; backface-visibility: hidden; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+.stretch-face.front { border-top: 6px solid var(--seal); }
+.stretch-face.back { transform: rotateY(180deg); border-top: 6px solid #E69F00; }
+.stretch-name { display: block; font-size: 18px; margin-bottom: 6px; }
+.stretch-items { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+.stretch-items li { border-left: 4px solid #E69F00; padding: 4px 8px; margin: 6px 0; background: #fdf6ea; border-radius: 4px; }
+.stretch-items li.note-self, .stretch-items li.note-hint { border-color: #009E73; background: #e8f5ef; }
+.stretch-items small { color: var(--sub); font-weight: 700; }
+.list.note-own li { border-left: 4px solid #0072B2; padding-left: 8px; }
+.feel { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+.feel button { color: var(--ink); background: transparent; border: 1px solid #b9b3a4; }
+.feel button[aria-pressed="true"] { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .stretch-inner { transition: none; } }

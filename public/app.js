@@ -165,7 +165,7 @@ async function home() {
   show(
     h('h1', {}, '「これで100点」を、\n話しながら110点へ。'),
     h('p', { class: 'lead' }, '一言ずつ話すだけで大丈夫です。話した内容は思考ツリーに育ち、Claudeの見立ては少し話してから開きます。'),
-    h('p', {}, h('a', { class: 'button', href: '#/new' }, '話しはじめる'), ' ', h('a', { class: 'button ghost', href: '#/notebook' }, '観点帳を見る')),
+    h('p', {}, h('a', { class: 'button', href: '#/stretch' }, 'ストレッチャーを呼ぶ'), ' ', h('a', { class: 'button ghost', href: '#/new' }, '話しはじめる'), ' ', h('a', { class: 'button ghost', href: '#/notebook' }, '観点帳を見る')),
     ledger.due.length ? h('section', { class: 'card due' },
       h('h2', {}, '結果を確かめる日です'),
       h('ul', { class: 'list' }, ledger.due.map((d) => h('li', {},
@@ -450,7 +450,7 @@ async function notebookView() {
   const pctText = (v) => (v == null ? '-' : `${v}%`);
   show(
     h('h1', {}, '観点帳'),
-    h('p', { class: 'lead' }, '自分で先に出した検討事項と、AIの観点役だけが出したものの記録です。自分で出せるようになった観点から、ヒント（補助輪）が外れていきます。'),
+    h('p', { class: 'lead' }, '自分で先に出した検討事項と、AI社員だけが出したものの記録です。自分で出せるようになった観点から、ヒント（補助輪）が外れていきます。'),
     cycles.length ? null : h('p', { class: 'muted' }, 'まだ記録はありません。Claude Code で pdcaai スキルを使うと、ここに積まれます。'),
     stats.length ? h('section', { class: 'card' },
       h('h2', {}, '周回ごとの伸び'),
@@ -460,6 +460,7 @@ async function notebookView() {
           h('span', { style: `width:${s.selfRate ?? 0}%` })),
         h('p', {}, `自分で ${s.self} / ヒントで ${s.hint} / AIだけ ${s.ai}（全${s.total}件、自分で出せた割合 ${pctText(s.selfRate)}）`, s.ownOnly ? ` / 自分だけ ${s.ownOnly}` : '', s.spread ? ` / ヒントで広がった ${s.spread}` : ''),
         s.recalled ? h('p', { class: 'recall-note' }, `前に見落とした型を、ヒントなしで自分で出せた ${s.recalled}`) : null,
+        h('p', { class: 'muted' }, `${s.mode === 'card' ? 'カード' : 'スキル'}で回した`, s.feel == null ? '' : `　考える力の手応え: ${FEEL.find(([v]) => v === s.feel)[1]}`),
         h('p', { class: 'muted' }, `最初の自信 ${s.confidenceBefore}% → 見直し ${pctText(s.confidenceAfter)}　思い込みのズレ ${s.selfRate == null ? '-' : `${s.confidenceBefore - s.selfRate}pt`}`))))) : null,
     h('section', { class: 'card' },
       h('h2', {}, '補助輪の状態'),
@@ -470,12 +471,106 @@ async function notebookView() {
   );
 }
 
+// カード版のストレッチャー。「これで完璧」と思った瞬間に4人のAI社員が現れ、
+// 先に自分で「足りないもの」を考えてから、カードをめくって答え合わせをする。
+const FEEL = [[-2, '下がった'], [-1, '少し下がった'], [0, '変わらない'], [1, '少し上がった'], [2, '上がった']];
+const ITEM_LABEL = { self: '自分でも出せた', hint: 'ヒントで出せた', ai: 'AI社員だけ' };
+
+function stretchCard(card, back) {
+  return h('div', { class: 'stretch-card' },
+    h('div', { class: 'stretch-inner' },
+      h('div', { class: 'stretch-face front', 'aria-hidden': back ? 'true' : null },
+        h('b', { class: 'stretch-name' }, card.name),
+        h('p', {}, card.question)),
+      h('div', { class: 'stretch-face back', 'aria-hidden': back ? null : 'true' },
+        h('b', { class: 'stretch-name' }, card.name),
+        back ?? null)));
+}
+
+function stretchView() {
+  setChain([]);
+  show(
+    h('h1', {}, 'ストレッチャーを呼ぶ'),
+    h('p', { class: 'lead' }, '「これで完璧！」と思ったら、AI社員4人を呼びます。先に自分で「足りないもの」を考えてから、カードをめくります。'),
+    form(async (v) => {
+      const st = await api('stretch', { project: v.project, summary: v.summary, confidenceBefore: Number(v.confidence) });
+      stretchThink(st);
+    },
+    field('作るもの・始めること', 'project', { hint: '一言で' }),
+    h('label', {}, '説明（なくても大丈夫です）', h('textarea', { name: 'summary', rows: 3, maxlength: 500 })),
+    percentField('今の自信（%）', 'confidence', 80, 0),
+    h('button', { type: 'submit' }, 'ストレッチャー登場')),
+  );
+}
+
+function stretchThink(st) {
+  show(
+    h('h1', {}, 'いま足りないのって、なんや？'),
+    h('p', { class: 'lead' }, '4人のカードを見て、思いついたことを書いてください。1行に1つ。なければ空のままで大丈夫です。AI社員は裏で洗い出しています。'),
+    h('div', { class: 'stretch-grid' }, st.cards.map((c) => stretchCard(c))),
+    form(async (v) => {
+      const own = v.own.split('\n').map((s) => s.trim()).filter(Boolean);
+      const out = await api(`stretch/${st.id}/answer`, { own });
+      stretchReveal(st, out);
+    },
+    h('label', {}, '足りないと思うこと', h('textarea', { name: 'own', rows: 6, maxlength: 3000 })),
+    h('button', { type: 'submit' }, 'カードをめくる')),
+  );
+}
+
+function stretchReveal(st, { cycle, summary }) {
+  const ownText = new Map(cycle.own.map((o) => [o.id, o.text]));
+  const backOf = (lens) => {
+    const items = cycle.items.filter((i) => i.lens === lens);
+    return items.length
+      ? h('ul', { class: 'stretch-items' }, items.map((i) => h('li', { class: `note-${i.status}` },
+        h('small', {}, ITEM_LABEL[i.status]), h('div', {}, i.item),
+        i.ownId ? h('div', { class: 'muted' }, `あなたの言葉:「${ownText.get(i.ownId)}」`) : h('div', { class: 'muted' }, `確かめ方: ${i.check}`))))
+      : h('p', { class: 'muted' }, '指摘なし');
+  };
+  const mine = cycle.own.filter((o) => !cycle.items.some((i) => i.ownId === o.id));
+  const recalled = cycle.own.filter((o) => o.recalls);
+  let feel = null;
+  const buttons = h('div', { class: 'feel', role: 'group', 'aria-label': '考える力の手応え' }, FEEL.map(([value, label]) => h('button', {
+    type: 'button',
+    'aria-pressed': 'false',
+    onclick: (e) => {
+      feel = value;
+      for (const b of buttons.children) b.setAttribute('aria-pressed', String(b === e.currentTarget));
+    },
+  }, label)));
+  const cards = st.cards.map((c) => stretchCard(c, backOf(c.lens)));
+  // 表のまま描いてから1枚ずつめくる。
+  cards.forEach((el, i) => setTimeout(() => el.classList.add('flipped'), 150 + i * 250));
+  show(
+    h('h1', {}, 'カードをめくりました'),
+    h('p', { class: 'lead' }, `自分でも出せた ${summary.self} / AI社員だけ ${summary.ai} / 自分だけ ${summary.ownOnly}`),
+    h('div', { class: 'stretch-grid' }, cards),
+    mine.length ? h('section', { class: 'card' }, h('h2', {}, '自分だけが出したもの'), h('p', { class: 'muted' }, 'AI社員4人の誰も出さなかった、あなたの考えです。'),
+      h('ul', { class: 'list note-own' }, mine.map((o) => h('li', {}, o.text)))) : null,
+    recalled.length ? h('section', { class: 'card' }, h('h2', {}, '前に見落とした型を、自分で出せた'),
+      h('ul', { class: 'list' }, recalled.map((o) => h('li', { class: 'recall-note' }, `「${o.text}」→ ${o.recalls.pattern}`)))) : null,
+    h('section', { class: 'card' },
+      h('h2', {}, '考える力は上がった感じがしますか？'),
+      h('p', { class: 'muted' }, 'あなたの感じたままで大丈夫です。スキル（文字）で回したときと比べるために残します。'),
+      form(async (v) => {
+        if (feel == null) throw new Error('手応えを1つ選んでください');
+        await api(`stretch/${st.id}/feel`, { feel, confidenceAfter: Number(v.confidence) });
+        show(h('h1', {}, '記録しました'), h('p', {}, h('a', { class: 'button', href: '#/notebook' }, '観点帳の木を見る'), ' ', h('a', { class: 'button ghost', href: '#/stretch' }, 'もう一度呼ぶ')));
+      },
+      buttons,
+      percentField('今の自信（%）', 'confidence', cycle.confidenceBefore, 0),
+      h('button', { type: 'submit' }, '記録する'))),
+  );
+}
+
 async function router() {
   const hash = location.hash || '#/';
   try {
     const m = hash.match(/^#\/s\/([\w-]+)$/);
     if (hash === '#/new') newSession();
     else if (hash === '#/notebook') await notebookView();
+    else if (hash === '#/stretch') stretchView();
     else if (m) await session(m[1]);
     else await home();
   } catch (ex) {

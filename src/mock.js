@@ -19,8 +19,32 @@ function userLines(user) {
     .map((l) => l.slice('作り手: '.length));
 }
 
-export function mockResponse({ schema, user }) {
+// カード版のストレッチャー用。AI社員の項目と突き合わせを、固定の内容で返す。
+const STRETCH = {
+  '初めて触る人': { item: '最初の画面で何をすればいいか書かれていない', why: '初めての人は最初の一手で止まりやすい。', check: '初見の人に画面だけ見せて、最初の操作までの時間を測る。' },
+  '壊れる': { item: '途中で閉じると入力が消える', why: '長い入力ほど、消えたときの損が大きい。', check: '入力の途中で閉じて開き直し、残っているか確かめる。' },
+  '運営担当': { item: '使う人が増えたときの費用が見積もられていない', why: '無料のまま増えると、費用だけがかさむ。', check: '10人と100人のときの月額を書き出す。' },
+  '読み違え': { item: '「完成」の基準が人によって違う', why: '受け取った人が、どこまでやれば終わりか判断できない。', check: '完成の条件を3行で書き、別の人に読んでもらう。' },
+};
+
+function mockStretch(keys, system, user) {
+  if (keys.includes('items')) {
+    const hit = Object.entries(STRETCH).find(([k]) => system.includes(k));
+    return { items: hit ? [hit[1]] : [] };
+  }
+  if (keys.includes('quotes')) {
+    const own = (user.match(/本人の答え:\n([\s\S]*?)\n\n/)?.[1] ?? '').split('\n').map((l) => l.replace(/^\d+: /, ''));
+    const items = (user.match(/AIの検討事項:\n([\s\S]*?)\n\n/)?.[1] ?? '').split('\n');
+    // 本人の答えとAIの項目に同じ言葉があれば、その言葉を引用として返す。
+    const word = (line) => ['費用', '消え', '最初', '完成'].find((w) => line.includes(w) && own.some((o) => o.includes(w)));
+    return { quotes: items.map((line, index) => ({ index, quote: word(line) ?? '', pattern: '' })) };
+  }
+  return { recalls: [] };
+}
+
+export function mockResponse({ schema, system = '', user }) {
   const keys = Object.keys(schema.properties);
+  if (['items', 'quotes', 'recalls'].some((k) => keys.includes(k))) return mockStretch(keys, system, user);
   const lines = userLines(user);
   if (keys.includes('reply')) {
     const turn = lines.length - 1;
