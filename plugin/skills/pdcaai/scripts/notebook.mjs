@@ -184,6 +184,45 @@ export function applyUpdate(book, input) {
   return cycle;
 }
 
+// 観点帳から引継ぎ書の下書きを作る。本人の言葉はそのまま載せ、AI社員が補った行には印を付ける。
+// 「ツールの説明書」と、人から人へ伝える「業務の引継ぎ」の2部に分ける。
+const MANUAL = [
+  { title: 'ツールの説明書', parts: [
+    { lens: 'first-timer', heading: '初めて触る人が迷うところ' },
+    { lens: 'breaker', heading: '壊れる・混ざる・消えるのを防ぐ' },
+  ] },
+  { title: '業務の引継ぎ', parts: [
+    { lens: 'misreading', heading: '言葉と範囲の取り決め' },
+    { lens: 'money-ops', heading: 'お金と続けるための運用' },
+  ] },
+];
+
+// 同じ題材の周回だけをまとめる。「（深掘り）」のような末尾の括弧書きは同じ題材として扱う。
+const subject = (p) => norm(p).replace(/[（(][^（(]*[)）]$/, '');
+
+export function manual(book, cycles = book.cycles.filter((c) => subject(c.project) === subject(book.cycles.at(-1)?.project))) {
+  const seen = new Set();
+  const items = cycles.flatMap((c) => c.items).filter((i) => i.decision !== 'skip' && !seen.has(i.item) && seen.add(i.item));
+  const line = (i) => [
+    `- ${i.item}${i.status === 'ai' ? '（AI社員が補足）' : ''}`,
+    ...(i.why ? [`  - なぜ: ${i.why}`] : []),
+    ...(i.check ? [`  - 確かめ方: ${i.check}`] : []),
+  ];
+  const out = [`# 引継ぎ書（下書き）: ${cycles.at(-1)?.project ?? ''}`, '', 'pdcaai の観点帳から作りました。本人の言葉はそのまま載せています。「AI社員が補足」の行は、本人が書くか消すかを決めてください。', ''];
+  for (const section of MANUAL) {
+    out.push(`## ${section.title}`, '');
+    for (const part of section.parts) {
+      const rows = items.filter((i) => i.lens === part.lens);
+      if (rows.length) out.push(`### ${part.heading}`, '', ...rows.flatMap(line), '');
+    }
+    if (section.title === '業務の引継ぎ') {
+      const said = [...new Set(cycles.flatMap((c) => c.own.map((o) => o.text)))];
+      if (said.length) out.push('### 人から人へ伝えること（本人の言葉）', '', ...said.map((t) => `- ${t}`), '');
+    }
+  }
+  return out.join('\n');
+}
+
 async function readInput(path) {
   if (!path) throw new Error('入力のJSONファイルを指定してください');
   return JSON.parse((await readFile(path, 'utf8')).replace(/^﻿/, ''));
@@ -213,7 +252,12 @@ async function main([command, arg]) {
     await save(book, file);
     return { id: cycle.id, summary: summarize(cycle) };
   }
-  throw new Error('使い方: notebook.mjs hints | stats | record <file.json> | update <file.json>');
+  if (command === 'manual') {
+    const out = arg ?? join(dirname(file), 'manual.md');
+    await writeFile(out, manual(book));
+    return { manual: out };
+  }
+  throw new Error('使い方: notebook.mjs hints | stats | record <file.json> | update <file.json> | manual [out.md]');
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {

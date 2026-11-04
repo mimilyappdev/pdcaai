@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyUpdate, buildCycle, hints, known, quoteIn, stats, summarize } from '../plugin/skills/pdcaai/scripts/notebook.mjs';
+import { applyUpdate, buildCycle, hints, known, manual, quoteIn, stats, summarize } from '../plugin/skills/pdcaai/scripts/notebook.mjs';
 import { shouldNudge } from '../plugin/hooks/moment.mjs';
 
 const input = (own, items, extra = {}) => ({ project: '引継ぎツール', confidenceBefore: 100, own, items, ...extra });
@@ -107,4 +107,19 @@ test('前に見落とした型と一字一句同じときだけ、自分で思�
   assert.deepEqual(c.own.map((o) => o.recalls?.lens ?? null), ['money-ops', null]);
   assert.equal(summarize(c).recalled, 1);
   assert.equal(hints(book).find((h) => h.lens === 'money-ops').level, 1);
+});
+
+test('引継ぎ書は説明書と業務の2部に分け、本人の言葉をそのまま載せ、やらない項目は外す', () => {
+  const book = { cycles: [] };
+  const c = addCycle(book,
+    [{ text: '問題が起きたときの報告ルール', phase: 'free' }],
+    [item('first-timer'), item('misreading', '報告ルール'), item('breaker')]);
+  applyUpdate(book, { decisions: { a3: 'skip' } });
+  const md = manual(book);
+  assert.ok(md.indexOf('## ツールの説明書') < md.indexOf('## 業務の引継ぎ'));
+  assert.match(md, /- first-timerの項目（AI社員が補足）/);
+  assert.match(md, /- misreadingの項目\n/);
+  assert.match(md, /- 問題が起きたときの報告ルール/);
+  assert.doesNotMatch(md, /breakerの項目/);
+  assert.equal(c.items[2].decision, 'skip');
 });
