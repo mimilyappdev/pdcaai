@@ -28,6 +28,129 @@
 <h1>pdcaai 検討ページ</h1>
 <p class="lead">見た目や構成の検討を、新しいものから上に積み上げます。古い検討は消さずに残します。</p>
 
+<article id="2026-11-06-redesign">
+<p class="date">2026-11-06（4つ目）</p>
+<h2>アプリを「考える／引き継ぐ／振り返る」の3画面に整理し、オレンジとめんだこの清書でリデザインする</h2>
+<h3>何を変えたか</h3>
+<ul>
+  <li>今の入口（「110点へ」・思い込み台帳・3つのボタン）をやめ、ヘッダーの3つのタブ「考える／引き継ぐ／振り返る」に分けた。</li>
+  <li>考える: 11/5の「左で作業、右で木」を引き継ぐ。AIの返事待ちの間は、考え中のめんだこが出る。</li>
+  <li>引き継ぐ: 主役は「止まった数」。後任テストの8場面に○×が1つずつ点き、止まった場面に本人が1行足すと、もう一度試せる。木は出さない。</li>
+  <li>振り返る: 周回ごとの棒グラフ（自分で先に／ヒントのあと／AIだけ）と再会カード。</li>
+  <li>色はテーマカラーB（#B84E26）、めんだこは作者の清書。</li>
+</ul>
+<h3>修正理由</h3>
+<ul>
+  <li>動画で本物の画面を撮るため。今のアプリは機能ごとに画面が散らばっていて、どこで何をしているかが映像で伝わらない。</li>
+  <li>11/5の見本の紺と黄土色を、決めたオレンジにそろえた。役名も「引き継ぎ相手」→「ユーザー」に変わった。</li>
+</ul>
+<style>
+  .rd { --a:#B84E26; --ad:#8F3A18; --at:#F6DCCB; --me:#2E3460; --met:#E7EEF8; font-family: "Yu Gothic UI","Hiragino Sans",sans-serif; border:1px solid var(--line); border-radius:14px; overflow:hidden; margin:12px 0 28px; background:#f6f3ec; }
+  .rd-h { background:var(--a); color:#fff; display:flex; align-items:center; gap:10px; padding:8px 14px; }
+  .rd-h img { width:40px; height:40px; object-fit:contain; background:#fff3; border-radius:8px; }
+  .rd-h b { font-size:18px; } .rd-h small { font-size:11px; opacity:.85; display:block; margin-top:-4px; }
+  .rd-tabs { margin-left:auto; display:flex; gap:4px; }
+  .rd-tabs span { padding:4px 12px; border-radius:99px; font-size:13px; }
+  .rd-tabs span.on { background:#fff; color:var(--ad); font-weight:700; }
+  .rd-b { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:12px; }
+  .rd-c { background:#fff; border:1px solid #e3ddd0; border-radius:12px; padding:10px 12px; margin-bottom:10px; font-size:14px; }
+  .rd-c h4 { margin:0 0 6px; font-size:13px; color:var(--ad); }
+  .rd-crew { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; text-align:center; font-size:11px; }
+  .rd-crew div { border:1px solid #e3ddd0; border-radius:10px; padding:4px 2px; opacity:.4; }
+  .rd-crew div.on { opacity:1; border:2px solid var(--a); background:#fff5ef; }
+  .rd-crew img { width:56px; height:56px; object-fit:contain; display:block; margin:0 auto; }
+  .rd-ask { background:var(--me); color:#fff; border-radius:10px; padding:8px 10px; }
+  .rd-ask small { opacity:.75; display:block; font-size:11px; }
+  .rd-in { border:1px solid #d9d4c7; border-radius:8px; padding:8px; color:#999; margin-top:6px; }
+  .rd-btn { display:inline-block; background:var(--a); color:#fff; border-radius:8px; padding:6px 16px; font-weight:700; margin-top:6px; }
+  .rd-btn.g { background:#fff; color:var(--ad); border:1px solid var(--a); }
+  .rd-wait { display:flex; align-items:center; gap:8px; color:var(--ad); font-weight:700; }
+  .rd-wait img { width:60px; height:60px; object-fit:contain; }
+  .rd-tree { min-height:300px; background:radial-gradient(120% 90% at 50% 100%, #eef3e6, #fff 70%); border-radius:10px; position:relative; }
+  .rd-leaf { position:absolute; font-size:12px; padding:4px 10px; border-radius:14px 2px 14px 2px; max-width:150px; }
+  .rd-leaf.me { background:var(--met); color:var(--me); border:2px solid #7b95c9; }
+  .rd-leaf.ai { background:var(--at); color:var(--ad); border:2px solid var(--a); }
+  .rd-big { font-size:56px; font-weight:800; color:var(--a); line-height:1; }
+  .rd-grid { display:grid; grid-template-columns:repeat(8,1fr); gap:4px; margin:8px 0; }
+  .rd-grid span { text-align:center; border-radius:6px; padding:6px 0; font-weight:700; background:#e3f0e8; color:#2d6a4f; }
+  .rd-grid span.x { background:var(--a); color:#fff; } .rd-grid span.p { background:#eee; color:#aaa; }
+  .rd-bars { display:flex; gap:18px; align-items:flex-end; height:150px; padding:6px 10px; border-bottom:1px solid #ccc; }
+  .rd-bars div { display:flex; flex-direction:column-reverse; width:46px; }
+  .rd-bars i { display:block; }
+  .rd-cap { display:flex; gap:18px; padding:0 10px; font-size:12px; } .rd-cap span { width:46px; text-align:center; }
+  .rd-key span { display:inline-block; width:10px; height:10px; border-radius:2px; margin:0 4px 0 10px; }
+  @media (max-width:720px) { .rd-b { grid-template-columns:1fr; } }
+</style>
+
+<h3>画面1 考える</h3>
+<div class="rd">
+  <div class="rd-h"><img src="../public/img/mendako-first-timer.png" alt=""><div><b>PDCAI</b><small>AIだけじゃダメですか？！</small></div>
+    <div class="rd-tabs"><span class="on">考える</span><span>引き継ぐ</span><span>振り返る</span></div></div>
+  <div class="rd-b">
+    <div>
+      <div class="rd-c"><h4>① 引き継ぐこと</h4>カフェの予約の受け方を、週3日の新人に引き継ぐ</div>
+      <div class="rd-c"><h4>② めんだこたち（今聞いている子に色）</h4>
+        <div class="rd-crew"><div><img src="../public/img/mendako-first-timer.png" alt="">新入社員</div><div><img src="../public/img/mendako-breaker.png" alt="">法務・リスク</div><div class="on"><img src="../public/img/mendako-money-ops.png" alt="">財務</div><div><img src="../public/img/mendako-misreading.png" alt="">ユーザー</div></div></div>
+      <div class="rd-c"><h4>③ ASK</h4><div class="rd-ask"><small>財務から</small>Instagramのアカウントは、新人が辞めたら誰が管理する？</div></div>
+      <div class="rd-c"><h4>④ あなたの言葉で</h4><div class="rd-in">一言でOK。「決めてない」も答えです</div><span class="rd-btn">送る</span> <span class="rd-btn g">決めてない</span></div>
+      <div class="rd-c rd-wait"><img src="../public/img/mendako-thinking.png" alt="">めんだこたちが考え中…（AIの返事待ち）</div>
+    </div>
+    <div class="rd-c"><h4>思考の木（青＝自分、オレンジ＝AIの指摘に答えた）</h4>
+      <div class="rd-tree">
+        <span class="rd-leaf me" style="left:8%;bottom:20px">予約は紙のノートが正</span>
+        <span class="rd-leaf me" style="left:52%;bottom:20px">窓際の2名席は予約に回さない</span>
+        <span class="rd-leaf ai" style="left:14%;bottom:90px">電話とDMは受ける前にノートを見る</span>
+        <span class="rd-leaf me" style="left:55%;bottom:100px">ナッツは赤で書く</span>
+        <span class="rd-leaf ai" style="left:28%;bottom:170px">スマホをなくした時は…決めてない</span>
+        <span class="rd-leaf me" style="left:42%;bottom:240px;font-size:20px;background:none;border:0">🍏</span>
+      </div></div>
+  </div>
+</div>
+
+<h3>画面2 引き継ぐ</h3>
+<div class="rd">
+  <div class="rd-h"><img src="../public/img/mendako-first-timer.png" alt=""><div><b>PDCAI</b><small>AIだけじゃダメですか？！</small></div>
+    <div class="rd-tabs"><span>考える</span><span class="on">引き継ぐ</span><span>振り返る</span></div></div>
+  <div class="rd-b">
+    <div class="rd-c"><h4>引継ぎカード（全部あなたの言葉）</h4>
+      <b>この仕事は何のため</b><br>電話とDMで予約を受け、席が重ならないようにする。<br>
+      <b>自分で決めていいこと</b><br>予約時間から20分過ぎても来なければ、席を空けてよい。<br>
+      <b>困ったら</b><br>キャンセル料はかからない（今まで取ったことはない）。<br>
+      <span style="background:var(--at);border-radius:4px;padding:0 4px">＋ 止まった場面に1行足す</span></div>
+    <div>
+      <div class="rd-c"><h4>後任テスト（カードだけを読んだ後任AIが8場面を試す）</h4>
+        <div style="display:flex;align-items:flex-end;gap:12px"><div class="rd-big">2</div><div>/ 8 で止まった<br><small style="color:#888">前回 3 → 今回 2</small></div></div>
+        <div class="rd-grid"><span class="x">1</span><span>2</span><span class="x">3</span><span>4</span><span>5</span><span>6</span><span>7</span><span class="p">8</span></div>
+        <small>○×が1つずつ点く。8はまだ試し中。</small></div>
+      <div class="rd-c"><h4>止まった場面 3</h4>日曜15時に2名、同じ時間にDMで3名…どちらを先に受ける？<br><small style="color:#888">後任の言葉: 電話とDMが重なったときの順番がカードにない</small><br><span class="rd-btn">1行足して、もう一度</span></div>
+    </div>
+  </div>
+</div>
+
+<h3>画面3 振り返る</h3>
+<div class="rd">
+  <div class="rd-h"><img src="../public/img/mendako-first-timer.png" alt=""><div><b>PDCAI</b><small>AIだけじゃダメですか？！</small></div>
+    <div class="rd-tabs"><span>考える</span><span>引き継ぐ</span><span class="on">振り返る</span></div></div>
+  <div class="rd-b">
+    <div class="rd-c"><h4>周回ごとの伸び</h4>
+      <div class="rd-bars">
+        <div><i style="height:40px;background:#2E3460"></i><i style="height:20px;background:#7b95c9"></i><i style="height:56px;background:#d9c7bb"></i></div>
+        <div><i style="height:56px;background:#2E3460"></i><i style="height:28px;background:#7b95c9"></i><i style="height:36px;background:#d9c7bb"></i></div>
+        <div><i style="height:76px;background:#2E3460"></i><i style="height:30px;background:#7b95c9"></i><i style="height:20px;background:#d9c7bb"></i></div>
+      </div>
+      <div class="rd-cap"><span>1周目</span><span>2周目</span><span>3周目</span></div>
+      <p class="rd-key" style="font-size:12px"><span style="background:#2E3460"></span>自分で先に<span style="background:#7b95c9"></span>ヒントのあと<span style="background:#d9c7bb"></span>AIだけ</p>
+      <small>数字は見本（架空）。</small></div>
+    <div>
+      <div class="rd-c"><h4>再会カード</h4>前に見落とした「記録が個人のスマホに閉じている」を、3周目に自分で出せました（法務・リスク管理）</div>
+      <div class="rd-c"><h4>ここが伸びてますよ</h4>財務の補助輪が外れました（ヒントなしで出せた）</div>
+      <div class="rd-c"><h4>成果物</h4><span class="rd-btn g">引継ぎ書（before/after）</span> <span class="rd-btn g">思考進化シート</span></div>
+    </div>
+  </div>
+</div>
+<p>未確認・次の検討: 見本の数字・文は配置を見るための仮。木の葉の色を「自分／AIの指摘に答えた」の2色にするか、11/5の考え方の4分類（広げる・深める・疑う・決める）にするか。</p>
+</article>
+
 <article id="2026-11-06-color">
 <p class="date">2026-11-06（3つ目）</p>
 <h2>テーマカラー: Claudeのオレンジより少し濃いオレンジ（3案）</h2>
