@@ -48,7 +48,7 @@ export function buildTree(sessions) {
   return nodes;
 }
 
-export const NOTE_TAGS = { self: '自分で出せた', own: '自分だけ', spread: 'ヒントで広がった', hint: 'ヒントで', ai: 'AIで気づいた', skip: 'やらない', none: '作品・観点' };
+export const NOTE_TAGS = { self: '自分で見つけた', own: '自分で見つけた（AIも出さなかった）', spread: 'AIの指摘のあとで広がった', hint: 'AIの指摘に答えた', ai: 'AIだけ', skip: 'やらない', none: '作品・観点' };
 
 // 観点帳を一本の木として配置する。周回ごとに幹が1段ずつ上へ伸び、各段からAI社員ごとの枝が左右に開く。
 // 葉の形は区分ごとに変える（自分の考え=葉、AIの気づき=つぼみ、ヒントで広がった=花）。色が見分けにくい人にも区別できるように。

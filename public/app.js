@@ -412,7 +412,7 @@ function drawGrowthTree(cycles, lenses) {
   const { width, height, trunk, canopy, branches, leaves } = layoutGrowthTree(cycles, lenses);
   const crown = canopy.map((c) => svg('ellipse', { cx: c.cx, cy: c.cy, rx: c.rx, ry: c.ry, class: 'canopy' }));
   const detail = h('div', { class: 'detail' }, h('p', { class: 'muted' }, '葉・つぼみ・花を選ぶと内容を確認できます。下の根元から、周回ごとに上へ伸びます。'));
-  const pick = (leaf) => detail.replaceChildren(h('b', {}, `${leaf.lens}・${NOTE_TAGS[leaf.tag]}`), leaf.recalled ? h('p', { class: 'recall-note' }, '前に見落とした型を、ヒントなしで自分で出せました') : null, h('p', {}, leaf.text));
+  const pick = (leaf) => detail.replaceChildren(...[h('b', {}, `${leaf.lens}・${NOTE_TAGS[leaf.tag]}`), leaf.recalled ? h('p', { class: 'recall-note' }, '前に見落とした型を、ヒントなしで自分で出せました') : null, h('p', {}, leaf.text)].filter(Boolean));
   const ground = svg('path', { d: `M${width / 2 - 70} ${trunk[0].y1 + 2} Q${width / 2} ${trunk[0].y1 - 6} ${width / 2 + 70} ${trunk[0].y1 + 2}`, class: 'ground' });
   const trunkEls = trunk.flatMap((t, i) => [
     svg('line', { x1: t.x, y1: t.y1, x2: t.x, y2: t.y2, 'stroke-width': t.width, class: 'trunk', style: `animation-delay:${i * 0.5}s` }),
