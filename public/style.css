@@ -235,7 +235,9 @@ button.ghost, .button.ghost { color: var(--ink); background: transparent; border
 
 /* リデザイン 2026-11-06: 考え中のめんだこ、止まった数、周回の棒グラフ */
 .thinking { display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin: 12px 0; background: var(--card); border: 1px solid var(--line); border-radius: 12px; color: var(--accent-dark); font-weight: 700; }
-.thinking img { width: 84px; height: 64px; object-fit: contain; animation: bob 1.2s ease-in-out infinite alternate; }
+.thinking img { width: 84px; height: 64px; object-fit: contain; animation: sway 1s ease-in-out infinite alternate; }
+/* 考え中の子は、首をかしげるように左右にぴこぴこ。 */
+@keyframes sway { from { transform: translateX(-4px) rotate(-6deg); } to { transform: translateX(4px) rotate(6deg); } }
 @keyframes bob { from { transform: translateY(0); } to { transform: translateY(-6px); } }
 .stuck-big { display: flex; align-items: flex-end; gap: 12px; margin: 4px 0 8px; }
 .stuck-big b { font-size: 72px; line-height: 1; color: var(--accent); }
