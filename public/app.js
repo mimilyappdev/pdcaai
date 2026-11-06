@@ -561,6 +561,81 @@ function tileTrees(cycles, lenses = {}) {
     })));
 }
 
+// 引継ぎの木（B案）: 後任AIテストの記録から「止まった → 店長に聞いた → 書き足した → 次はできた」を場面ごとにたどる。
+// 下の1回目から上へ、書き足した回ごとに枝が伸びる。新しい記録は足さず、テスト結果（止まった理由・足りない1行・できた根拠）だけで組み立てる。
+function handoverTree(cycle) {
+  const tests = (cycle.handover?.tests ?? []).filter((t) => t.scenes !== 'unseen');
+  if (tests.length < 2) return null;
+  const n = tests[0].results.length;
+  // できた根拠の行のうち、いちばん新しい追記を「書き足した行」とみなす。
+  const added = (line) => {
+    const parts = line.split('／').map((x) => x.trim()).filter(Boolean);
+    const num = (x) => Number((x.match(/追記(\d+)/) ?? [])[1] ?? 0);
+    return parts.reduce((a, b) => (num(b) > num(a) ? b : a), parts[0] ?? line);
+  };
+  const short = (job) => job.replace(/。.*$/, '');
+  const fixes = [];
+  const fine = [];
+  const left = [];
+  for (let j = 0; j < n; j++) {
+    const rs = tests.map((t) => t.results[j]);
+    if (rs.every((r) => r.result === 'できた')) { fine.push({ j, job: rs[0].job }); continue; }
+    for (let k = 1; k < rs.length; k++) {
+      if (rs[k - 1].result !== 'できた' && rs[k].result === 'できた') {
+        let from = k - 1;
+        while (from > 0 && rs[from - 1].result !== 'できた') from--;
+        fixes.push({ j, job: rs[0].job, from: from + 1, round: k + 1, why: rs[k - 1].why, missing: rs[k - 1].missing, line: added(rs[k].line) });
+      }
+    }
+    if (rs.at(-1).result !== 'できた') left.push({ j, job: rs[0].job, why: rs.at(-1).why });
+  }
+  // 下の回から順に枝が伸びるよう、回の早い順に出る順番を決める。
+  const STEP = 0.35;
+  fixes.sort((a, b) => a.round - b.round || a.j - b.j).forEach((f, i) => { f.order = i; });
+  const branch = (f) => {
+    const at = 0.4 + f.order * 4 * STEP;
+    const box = (cls, label, text, i) => h('div', { class: `ht-box ${cls}`, title: text, style: `animation-delay:${at + i * STEP}s` }, h('b', {}, label), h('span', {}, text));
+    return h('div', { class: 'ht-branch' },
+      box('scene', `場面${f.j + 1}`, short(f.job), 0),
+      box('stuck', f.from === f.round - 1 ? `${f.from}回目 止まった` : `${f.from}〜${f.round - 1}回目 止まった`, f.why, 1),
+      box('ask', '足りなかったこと（店長に聞く）', f.missing, 2),
+      box('leaf', `書き足した → ${f.round}回目はできた`, f.line, 3));
+  };
+  const rounds = tests.map((t, i) => ({ round: i + 1, stuck: t.stuck, fixes: fixes.filter((f) => f.round === i + 1) }));
+  const last = tests.at(-1);
+  // 初めての場面: 前のカードで人間もAIも止まった場面を、あなたの言葉（店長への問い）と最終稿の結果でたどる。
+  const fresh = (cycle.handover.tests ?? []).find((t) => t.scenes === 'unseen' && t.before?.scenes);
+  const freshAt = 0.4 + fixes.length * 4 * STEP + 0.8;
+  const freshBranch = (b, i) => {
+    const r = fresh.results[b.index];
+    const at = freshAt + i * 4 * STEP;
+    const box = (cls, label, text, k) => h('div', { class: `ht-box ${cls}`, title: text, style: `animation-delay:${at + k * STEP}s` }, h('b', {}, label), h('span', {}, text));
+    const ok = r.result === 'できた';
+    return h('div', { class: 'ht-branch' },
+      box('scene', `場面${b.index + 1}`, short(r.job), 0),
+      box('stuck', '止まった（後任AI）', b.ai.replace(/^止まった。/, ''), 1),
+      box('ask you', 'あなたも止まって、店長に聞いた', `「${b.human}」`, 2),
+      ok ? box('leaf', '店長が決めて書き足した → 最終稿はできた', added(r.line), 3)
+        : box('right', '最終稿でも止まる＝店長に聞くのが正解', r.line || r.why, 3));
+  };
+  return h('section', { class: 'card ht' },
+    h('h2', {}, '引継ぎの木（止まった → 店長に聞いた → 書き足した）'),
+    h('p', { class: 'tt-lead' }, '後任役のAIが、カードだけを読んで同じ8場面を試した記録です。止まった場面を店長に聞き、答えをカードに書き足すと、次の回で止まらなくなりました。下の1回目から上へ育ちます。'),
+    h('p', { class: 'muted' }, `題材: ${cycle.project}`),
+    fresh ? h('div', { class: 'ht-fresh' },
+      h('div', { class: 'ht-round' },
+        h('div', { class: 'ht-ring fresh' }, h('b', {}, '初めての8場面'), h('span', {}, `あなた ${fresh.before.human}・AI ${fresh.before.ai} → 最終稿 AI ${fresh.stuck}`)),
+        h('div', { class: 'ht-branches' }, fresh.before.scenes.map(freshBranch)))) : null,
+    last.stuck === 0 ? h('div', { class: 'ht-top', style: `animation-delay:${0.4 + fixes.length * 4 * STEP}s` }, '🍏', h('small', {}, `${tests.length}回目: 同じ8場面はすべてできた`)) : null,
+    h('div', { class: 'ht-trunk' }, rounds.slice().reverse().map((r) => h('div', { class: 'ht-round' },
+      h('div', { class: 'ht-ring' }, h('b', {}, `${r.round}回目`), h('span', {}, `止まった ${r.stuck}`)),
+      h('div', { class: 'ht-branches' }, r.fixes.length ? r.fixes.map(branch) : h('p', { class: 'muted ht-none' }, r.round === 1 ? '最初のカード' : '（止まらなくなった場面なし）'))))),
+    h('div', { class: 'ht-root' },
+      h('small', {}, '根＝最初から止まらなかった場面'),
+      h('ul', {}, fine.map((f) => h('li', {}, `場面${f.j + 1} ${short(f.job)}`)))),
+    left.length ? h('p', { class: 'muted' }, `まだ止まる場面: ${left.map((f) => `場面${f.j + 1}`).join('、')}`) : null);
+}
+
 async function notebookView() {
   setChain([]);
   const { cycles, stats, hints, lenses, humanOnly, reunions } = await api('notebook');
@@ -572,6 +647,7 @@ async function notebookView() {
     h('p', { class: 'lead' }, '自分で先に出した検討事項と、AI社員だけが出したものの記録です。自分で出せるようになった観点から、ヒント（補助輪）が外れていきます。'),
     cycles.length ? null : h('p', { class: 'muted' }, 'まだ記録はありません。Claude Code で pdcaai スキルを使うと、ここに積まれます。'),
     cycles.length ? tileTrees(cycles, lenses) : null,
+    ...cycles.map(handoverTree),
     stats.length ? cycleBars(stats) : null,
     stats.length ? growthTable(stats, lenses, reunions) : null,
     stats.length ? h('section', { class: 'card' },

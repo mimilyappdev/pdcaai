@@ -297,3 +297,37 @@ main.wide { max-width: 1240px; }
 .tt-bud { animation: pop .4s ease-out both; }
 @media (prefers-reduced-motion: reduce) { .tt-tile, .tt-leaf, .tt-apple, .tt-buds, .tt-bud, .tt-fork path { animation: none; } .tt-fork path { stroke-dashoffset: 0; } }
 .right-stop { color: #4F6D8F; font-weight: 700; margin-top: 0; }
+
+/* 引継ぎの木（B案） */
+.ht-trunk { position: relative; display: flex; flex-direction: column; gap: 10px; padding-left: 8px; }
+.ht-trunk::before { content: ''; position: absolute; left: 50px; top: 0; bottom: 0; width: 6px; border-radius: 3px; background: #9c8a6c; }
+.ht-round { position: relative; display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center; }
+.ht-ring { position: relative; z-index: 1; background: #fff; border: 2px solid #9c8a6c; border-radius: 12px; padding: 4px 6px; text-align: center; font-size: 12px; }
+.ht-ring b { display: block; font-size: 14px; }
+.ht-branches { display: flex; flex-direction: column; gap: 8px; }
+.ht-none { margin: 0; font-size: 12px; }
+.ht-branch { display: grid; grid-template-columns: 1.1fr 1.3fr 1.3fr 1.3fr; gap: 18px; position: relative; }
+.ht-box { position: relative; border-radius: 10px; padding: 6px 8px; font-size: 12px; line-height: 1.45; border: 2px solid; animation: pop .45s ease-out both; }
+.ht-box b { display: block; font-size: 11px; margin-bottom: 2px; }
+.ht-box span { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.ht-box + .ht-box::before { content: '→'; position: absolute; left: -16px; top: 50%; transform: translateY(-50%); color: #9c8a6c; font-weight: 700; }
+.ht-box.scene { border-color: #cfc8b8; background: #fff; }
+.ht-box.stuck { border-color: var(--accent); background: #fdf0e8; }
+.ht-box.stuck b { color: var(--accent-dark); }
+.ht-box.ask { border-color: #4F6D8F; background: #eef2f7; }
+.ht-box.ask b { color: #4F6D8F; }
+.ht-box.leaf { border-color: #009E73; background: #e3f0e8; border-radius: 85% 6px 85% 6px / 30% 6px 30% 6px; }
+.ht-box.leaf b { color: #00704f; }
+.ht-top { text-align: center; font-size: 32px; animation: pop .45s ease-out both; }
+.ht-top small { display: block; font-size: 12px; color: var(--sub); }
+.ht-root { margin-top: 10px; background: #20241f; color: #fff; border-radius: 10px; padding: 8px 12px; font-size: 12px; }
+.ht-root small { opacity: .75; }
+.ht-root ul { margin: 4px 0 0; padding-left: 18px; }
+.ht-box.ask.you { border-color: #7a4fa0; background: #f4eefa; }
+.ht-box.ask.you b { color: #6a3f90; }
+.ht-box.right { border-color: #4F6D8F; background: #4F6D8F; color: #fff; }
+.ht-fresh { border: 2px dashed var(--accent); border-radius: 14px; padding: 10px 8px; margin-bottom: 12px; background: #fffaf6; }
+.ht-ring.fresh { border-color: var(--accent); }
+.ht-ring.fresh b { color: var(--accent-dark); }
+@media (max-width: 800px) { .ht-branch { grid-template-columns: 1fr 1fr; } .ht-box + .ht-box::before { display: none; } }
+@media (prefers-reduced-motion: reduce) { .ht-box, .ht-top { animation: none; } }
