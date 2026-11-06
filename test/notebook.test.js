@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyUpdate, buildCycle, hints, known, manual, quoteIn, stats, summarize } from '../plugin/skills/pdcaai/scripts/notebook.mjs';
+import { applyUpdate, buildCycle, hints, known, manual, quoteIn, reunions, stats, summarize } from '../plugin/skills/pdcaai/scripts/notebook.mjs';
 import { shouldNudge } from '../plugin/hooks/moment.mjs';
 
 const input = (own, items, extra = {}) => ({ project: '引継ぎツール', confidenceBefore: 100, own, items, ...extra });
@@ -122,4 +122,20 @@ test('引継ぎ書は説明書と業務の2部に分け、本人の言葉をそ�
   assert.match(md, /- 問題が起きたときの報告ルール/);
   assert.doesNotMatch(md, /breakerの項目/);
   assert.equal(c.items[2].decision, 'skip');
+});
+
+test('周回ごとの伸びに、見落とした型の分母と補助輪の強さが付き、再会カードが並ぶ', () => {
+  const book = { cycles: [] };
+  addCycle(book, [{ text: '在庫の数', phase: 'free' }], [{ ...item('breaker'), pattern: '古い宛先に送り続ける' }, { ...item('money-ops', '在庫の数'), pattern: '数が合わない' }]);
+  const c2 = buildCycle(input([{ text: '担当が変わったら宛先も直す', phase: 'free', recalls: '古い宛先に送り続ける' }], [item('first-timer')]), book);
+  book.cycles.push(c2);
+  const [s1, s2] = stats(book);
+  assert.equal(s1.recallBase, 0);
+  assert.deepEqual(s1.wheels, { 'first-timer': null, breaker: null, 'money-ops': null, misreading: null });
+  assert.equal(s2.recallBase, 1);
+  assert.equal(s2.recalled, 1);
+  assert.equal(s2.wheels.breaker, 2);
+  assert.equal(s2.wheels['money-ops'], 0);
+  const [r] = reunions(book);
+  assert.deepEqual([r.pattern, r.from, r.fromAt], ['古い宛先に送り続ける', 'c1', book.cycles[0].createdAt]);
 });

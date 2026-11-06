@@ -211,3 +211,9 @@ button.ghost, .button.ghost { color: var(--ink); background: transparent; border
 .test-results li.pass { border-color: #009E73; background: #e8f5ef; }
 .test-results small { font-weight: 700; }
 .stuck-trend { font-weight: 700; font-size: 18px; }
+.growth-scroll { overflow-x: auto; }
+.growth-table { border-collapse: collapse; font-size: 14px; min-width: 100%; }
+.growth-table th, .growth-table td { border-bottom: 1px solid var(--line); padding: 6px 10px; text-align: center; white-space: nowrap; }
+.growth-table tbody th { text-align: left; font-weight: 400; white-space: normal; min-width: 12em; }
+.growth-table thead th { font-size: 13px; }
+.grew { font-weight: 700; color: var(--ok); }

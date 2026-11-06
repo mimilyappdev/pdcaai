@@ -442,16 +442,57 @@ function drawGrowthTree(cycles, lenses) {
 }
 
 const LEVEL_LABEL = { 2: '補助輪 強（見落とした例を出す）', 1: '補助輪 弱（観点名だけ）' };
+const WHEEL_LABEL = { 2: '強', 1: '弱', 0: '外れた' };
+const day = (iso) => new Date(iso).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
+
+// 周回を横に並べ、人の考える力が伸びたかを数字で見せる。最初と最後を比べて「ここが伸びてますよ」を出す。
+function growthTable(stats, lenses, reunions) {
+  const rows = [
+    ['AIと同じ点を、自分で先に出せた', (s) => s.self],
+    ['AIの誰も出さなかった、自分だけの考え', (s) => s.ownOnly],
+    ['ヒントのあとに広がった、自分だけの考え', (s) => s.spread],
+    ['前に見落とした型を、ヒントなしで出せた', (s) => (s.recallBase ? `${s.recalled} / ${s.recallBase}` : '-')],
+    ['AIだけが出した（見落とし）', (s) => s.ai],
+    ...Object.entries(lenses).map(([lens, name]) => [`補助輪: ${name}`, (s) => WHEEL_LABEL[s.wheels[lens]] ?? '-']),
+    ['後任AIテストで止まった数', (s) => (s.stuck.length ? s.stuck.join('→') : '-')],
+    ['考える力の手応え', (s) => (s.feel == null ? '-' : FEEL.find(([v]) => v === s.feel)[1])],
+  ];
+  const first = stats[0];
+  const last = stats.at(-1);
+  const grew = [];
+  if (stats.length > 1) {
+    if (last.self > first.self) grew.push(`自分で先に出せた点 ${first.self} → ${last.self}`);
+    if (last.ownOnly > first.ownOnly) grew.push(`自分だけの考え ${first.ownOnly} → ${last.ownOnly}`);
+    if (last.recalled > 0) grew.push(`前に見落とした型を ${last.recallBase}個中 ${last.recalled}個、自分で出せた`);
+    if (last.ai < first.ai) grew.push(`見落とし ${first.ai} → ${last.ai}`);
+    const off = Object.entries(lenses).filter(([lens]) => first.wheels[lens] != null && last.wheels[lens] < first.wheels[lens]).map(([, name]) => name);
+    if (off.length) grew.push(`補助輪が軽くなった: ${off.join('・')}`);
+  }
+  return h('section', { class: 'card' },
+    h('h2', {}, `${stats.length}周の伸び`),
+    h('div', { class: 'growth-scroll' }, h('table', { class: 'growth-table' },
+      h('thead', {}, h('tr', {}, h('th', {}, ''), stats.map((s, i) => h('th', {}, `${i + 1}周目`, h('div', { class: 'muted' }, day(s.createdAt)))))),
+      h('tbody', {}, rows.map(([label, get]) => h('tr', {}, h('th', {}, label), stats.map((s) => h('td', {}, String(get(s))))))))),
+    stats.length > 1
+      ? h('p', { class: 'grew' }, grew.length ? `ここが伸びてますよ: ${grew.join('／')}` : 'まだ数字には出ていません。周回を重ねると見えてきます。')
+      : h('p', { class: 'muted' }, '2周目から、ここに伸びが並びます。'),
+    reunions.length ? h('div', {},
+      h('h3', {}, '再会カード'),
+      h('ul', { class: 'list' }, reunions.map((r) => h('li', { class: 'recall-note' },
+        `${r.fromAt ? day(r.fromAt) : '前'}に見落とした「${r.pattern}」を、${day(r.at)}に自分で出せました（${lenses[r.lens] ?? ''}）`,
+        h('div', { class: 'muted' }, `あなたの言葉:「${r.text}」`))))) : null);
+}
 
 async function notebookView() {
   setChain([]);
-  const { cycles, stats, hints, lenses, humanOnly } = await api('notebook');
+  const { cycles, stats, hints, lenses, humanOnly, reunions } = await api('notebook');
   drawGrowthTree(cycles, lenses);
   const pctText = (v) => (v == null ? '-' : `${v}%`);
   show(
     h('h1', {}, '観点帳'),
     h('p', { class: 'lead' }, '自分で先に出した検討事項と、AI社員だけが出したものの記録です。自分で出せるようになった観点から、ヒント（補助輪）が外れていきます。'),
     cycles.length ? null : h('p', { class: 'muted' }, 'まだ記録はありません。Claude Code で pdcaai スキルを使うと、ここに積まれます。'),
+    stats.length ? growthTable(stats, lenses, reunions) : null,
     stats.length ? h('section', { class: 'card' },
       h('h2', {}, '周回ごとの伸び'),
       h('ul', { class: 'growth' }, stats.map((s) => h('li', {},
@@ -560,7 +601,7 @@ function stretchReveal(st, { cycle, summary }) {
     h('div', { class: 'stretch-grid' }, cards),
     mine.length ? h('section', { class: 'card' }, h('h2', {}, '自分だけが出したもの'), h('p', { class: 'muted' }, 'AI社員4人の誰も出さなかった、あなたの考えです。'),
       h('ul', { class: 'list note-own' }, mine.map((o) => h('li', {}, o.text)))) : null,
-    recalled.length ? h('section', { class: 'card' }, h('h2', {}, '前に見落とした型を、自分で出せた'),
+    recalled.length ? h('section', { class: 'card' }, h('h2', {}, '再会カード: 前に見落とした型を、自分で出せた'), h('p', { class: 'muted' }, 'ここが伸びてますよ。観点帳でいつ見落としたかを見返せます。'),
       h('ul', { class: 'list' }, recalled.map((o) => h('li', { class: 'recall-note' }, `「${o.text}」→ ${o.recalls.pattern}`)))) : null,
     h('section', { class: 'card' },
       h('h2', {}, '考える力は上がった感じがしますか？'),

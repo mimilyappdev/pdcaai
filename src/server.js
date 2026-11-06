@@ -99,7 +99,7 @@ async function route(engine, req, res, providerName) {
   if (req.method === 'GET' && pathname === '/api/ledger') return send(res, 200, await engine.ledger());
   if (req.method === 'GET' && pathname === '/api/notebook') {
     const book = await notebook.load();
-    return send(res, 200, { cycles: book.cycles, stats: notebook.stats(book), hints: notebook.hints(book), lenses: notebook.LENSES, slots: notebook.HANDOVER, humanOnly: notebook.humanOnly(book) });
+    return send(res, 200, { cycles: book.cycles, stats: notebook.stats(book), hints: notebook.hints(book), lenses: notebook.LENSES, slots: notebook.HANDOVER, humanOnly: notebook.humanOnly(book), reunions: notebook.reunions(book) });
   }
   const hm = pathname.match(/^\/api\/handover\/(c\d+)$/);
   if (req.method === 'POST' && hm) return send(res, 200, await handoverRoute(engine.provider, hm[1], await readJson(req)));

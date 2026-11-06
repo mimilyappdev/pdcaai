@@ -130,7 +130,29 @@ export function summarize(cycle) {
 }
 
 export function stats(book) {
-  return book.cycles.map((c) => ({ id: c.id, project: c.project, createdAt: c.createdAt, ...summarize(c) }));
+  return book.cycles.map((c, k) => {
+    const before = { cycles: book.cycles.slice(0, k) };
+    const shown = hints(before);
+    return {
+      id: c.id,
+      project: c.project,
+      createdAt: c.createdAt,
+      ...summarize(c),
+      // 前の周回までに見落とした型の数。recalled の分母。
+      recallBase: missedPatterns(before).length,
+      // この周回を始めたときの補助輪の強さ（観点ごと。2=強、1=弱、0=外れた、null=まだ記録がない）。
+      wheels: Object.fromEntries(Object.keys(LENSES).map((lens) => [lens,
+        before.cycles.some((x) => x.items.some((i) => i.lens === lens)) ? shown.find((x) => x.lens === lens)?.level ?? 0 : null])),
+    };
+  });
+}
+
+// 再会カード。前に見落とした型を、あとの周回でヒントなしに自分で出せた記録を古い順に並べる。
+export function reunions(book) {
+  const at = new Map(book.cycles.map((c) => [c.id, c.createdAt]));
+  return book.cycles.flatMap((c) => c.own
+    .filter((o) => o.phase === 'free' && o.recalls)
+    .map((o) => ({ cycleId: c.id, at: c.createdAt, text: o.text, pattern: o.recalls.pattern, lens: o.recalls.lens, from: o.recalls.from, fromAt: at.get(o.recalls.from) ?? null })));
 }
 
 export function buildCycle(input, book, now = new Date()) {
