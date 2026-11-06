@@ -385,7 +385,7 @@ function actDone(s) {
     h('p', {},
       a.result ? null : h('button', { class: 'ghost', type: 'button', onclick: () => continueFrom(s) }, 'この続きを話す'),
       ' ',
-      h('a', { class: 'button ghost', href: '#/' }, '台帳へ戻る')),
+      h('a', { class: 'button ghost', href: '#/' }, '考えるへ')),
   );
 }
 
@@ -433,7 +433,7 @@ function drawGrowthTree(cycles, lenses) {
     return g;
   });
   const legend = h('div', { class: 'legend' },
-    Object.entries(NOTE_TAGS).filter(([k]) => k !== 'none').map(([k, v]) => h('span', { class: `chip tag-${k}` }, v)),
+    h('span', { class: 'chip tag-self' }, '自分で見つけた'), h('span', { class: 'chip tag-hint' }, 'AIの指摘に答えた'), h('span', { class: 'chip tag-ai' }, 'AIだけ'),
     h('span', { class: 'muted shape-note' }, '葉=自分の考え / つぼみ=AIの気づき / 花=ヒントで広がった / 金の縁=前に見落とした型を自分で出せた'));
   const scroller = h('div', { class: 'tree-scroll' });
   scroller.append(svg('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': '観点帳の木', class: 'growth-tree', style: `max-width:${width}px` }, ...crown, ground, ...trunkEls, ...branchEls, ...leafEls));
@@ -483,6 +483,18 @@ function growthTable(stats, lenses, reunions) {
         h('div', { class: 'muted' }, `あなたの言葉:「${r.text}」`))))) : null);
 }
 
+// 周回ごとの棒グラフ。緑=自分で見つけた、オレンジ=AIの指摘に答えた、薄いオレンジ=AIだけ。
+function cycleBars(stats) {
+  const parts = (s) => [['c-self', s.self + s.ownOnly], ['c-answered', s.hint + s.spread], ['c-ai', s.ai]];
+  const max = Math.max(...stats.map((s) => parts(s).reduce((n, [, v]) => n + v, 0)), 1);
+  return h('section', { class: 'card' },
+    h('h2', {}, '周回ごとの伸び'),
+    h('div', { class: 'cycle-bars', role: 'img', 'aria-label': stats.map((s, i) => `${i + 1}周目 自分で${s.self + s.ownOnly} 答えた${s.hint + s.spread} AIだけ${s.ai}`).join('、') },
+      stats.map((s, i) => h('div', { class: 'col' }, parts(s).map(([c, v]) => h('i', { class: c, style: `height:${(v / max) * 160}px;animation-delay:${i * 0.15}s` }))))),
+    h('div', { class: 'cycle-caps' }, stats.map((s, i) => h('span', {}, `${i + 1}周目`))),
+    h('p', { class: 'bar-key' }, h('i', { class: 'c-self' }), '自分で見つけた', h('i', { class: 'c-answered' }), 'AIの指摘に答えた', h('i', { class: 'c-ai' }), 'AIだけ'));
+}
+
 async function notebookView() {
   setChain([]);
   const { cycles, stats, hints, lenses, humanOnly, reunions } = await api('notebook');
@@ -492,6 +504,7 @@ async function notebookView() {
     h('h1', {}, '観点帳'),
     h('p', { class: 'lead' }, '自分で先に出した検討事項と、AI社員だけが出したものの記録です。自分で出せるようになった観点から、ヒント（補助輪）が外れていきます。'),
     cycles.length ? null : h('p', { class: 'muted' }, 'まだ記録はありません。Claude Code で pdcaai スキルを使うと、ここに積まれます。'),
+    stats.length ? cycleBars(stats) : null,
     stats.length ? growthTable(stats, lenses, reunions) : null,
     stats.length ? h('section', { class: 'card' },
       h('h2', {}, '周回ごとの伸び'),
@@ -514,7 +527,7 @@ async function notebookView() {
       hints.length
         ? h('ul', { class: 'list' }, hints.map((x) => h('li', {}, h('b', {}, x.name), ` ${LEVEL_LABEL[x.level]}`, h('div', { class: 'muted' }, `この観点で自分で出せた割合 ${x.selfRate}%`))))
         : h('p', { class: 'muted' }, cycles.length ? '補助輪が必要な観点はありません。' : '初回はヒントなしで始めます。')),
-    h('p', {}, h('a', { class: 'button ghost', href: '#/' }, '台帳へ戻る')),
+    h('p', {}, h('a', { class: 'button ghost', href: '#/' }, '考えるへ')),
   );
 }
 
@@ -526,6 +539,11 @@ const ITEM_LABEL = { self: '自分でも出せた', hint: 'ヒントで出せた
 // AI社員4人は、作者が描いためんだこ。全員オレンジで、持ち物で見分ける。
 function mendako(lens, size = 100) {
   return h('img', { class: 'mendako', src: `/img/mendako-${lens}.png`, alt: '', width: size, height: Math.round(size * 0.7) });
+}
+
+// AIの返事待ち。考え中のめんだこを出す。
+function thinking(text) {
+  return h('div', { class: 'thinking', role: 'status' }, h('img', { src: '/img/mendako-thinking.png', alt: '' }), h('span', { class: 'waiting' }, text));
 }
 
 function stretchCard(card, back) {
@@ -546,6 +564,7 @@ function stretchView() {
     h('h1', {}, 'ストレッチャーを呼ぶ'),
     h('p', { class: 'lead' }, '「これで完璧！」と思ったら、AI社員4人を呼びます。先に自分で「足りないもの」を考えてから、カードをめくります。'),
     form(async (v) => {
+      app.append(thinking('めんだこたちが集まっています'));
       const st = await api('stretch', { project: v.project, summary: v.summary, confidenceBefore: Number(v.confidence) });
       stretchThink(st);
     },
@@ -559,10 +578,12 @@ function stretchView() {
 function stretchThink(st) {
   show(
     h('h1', {}, 'いま足りないのって、なんや？'),
-    h('p', { class: 'lead' }, '4人のカードを見て、思いついたことを書いてください。1行に1つ。なければ空のままで大丈夫です。AI社員は裏で洗い出しています。'),
+    h('p', { class: 'lead' }, '4人のカードを見て、思いついたことを書いてください。1行に1つ。なければ空のままで大丈夫です。'),
+    thinking('めんだこたちも、裏で考え中'),
     h('div', { class: 'stretch-grid' }, st.cards.map((c) => stretchCard(c))),
     form(async (v) => {
       const own = v.own.split('\n').map((s) => s.trim()).filter(Boolean);
+      app.append(thinking('めんだこたちが、あなたの答えと突き合わせています'));
       const out = await api(`stretch/${st.id}/answer`, { own });
       stretchReveal(st, out);
     },
@@ -639,9 +660,14 @@ async function handoverView(cycleId) {
     if (!last) return;
     const text = [`# 引継ぎカード: ${cycle.project}`, '', ...slots.flatMap((s) => [`## ${s.heading}`, handover.card[s.key] || '（空いています）', ''])].join('\n');
     const download = h('a', { class: 'button ghost', download: `引継ぎカード_${cycle.project}.md`, href: URL.createObjectURL(new Blob([text], { type: 'text/markdown' })) }, 'カードを書き出す（.md）');
+    const grid = h('div', { class: 'stuck-grid', 'aria-hidden': 'true' }, last.results.map((_, i) => h('span', {}, String(i + 1))));
+    // ○×を1つずつ点ける。
+    last.results.forEach((r, i) => setTimeout(() => { grid.children[i].className = r.result === 'できた' ? 'pass' : 'stuck'; }, 300 + i * 350));
     results.replaceChildren(h('div', { class: 'card' },
-      h('h2', {}, `後任AIテスト ${handover.tests.length}回目: 止まった ${last.stuck} / ${last.results.length}`),
+      h('h2', {}, `後任AIテスト ${handover.tests.length}回目`),
+      h('div', { class: 'stuck-big' }, h('b', {}, String(last.stuck)), h('span', {}, `/ ${last.results.length} で止まった`)),
       handover.tests.length > 1 ? h('p', { class: 'stuck-trend' }, `止まった数 ${handover.tests.map((t) => t.stuck).join(' → ')}`) : null,
+      grid,
       h('ul', { class: 'list test-results' }, last.results.map((r) => h('li', { class: r.result === 'できた' ? 'pass' : 'stuck' },
         h('small', {}, r.result), h('div', {}, r.job),
         h('div', { class: 'muted' }, r.result === 'できた' ? `根拠: ${r.line}` : `止まった: ${r.why}`),
@@ -653,7 +679,7 @@ async function handoverView(cycleId) {
     h('h1', {}, `引継ぎカード: ${cycle.project}`),
     h('p', { class: 'lead' }, '6つの欄を、あなたの言葉で埋めます。空いている欄は、担当のめんだこが声をかけます。書けたら、後任役のAIがこのカードだけを読んで、よくある仕事を試します。'),
     form(async (v) => {
-      results.replaceChildren(h('p', { class: 'muted' }, '後任役のAIが、カードだけを読んで仕事を試しています（30秒ほど）…'));
+      results.replaceChildren(thinking('後任役のAIが、カードだけを読んで仕事を試しています（30秒ほど）'));
       const out = await api(`handover/${cycleId}`, { card: v });
       renderResults(out.handover);
     }, ...rows, h('button', { type: 'submit' }, '後任AIに試してもらう')),
@@ -662,17 +688,33 @@ async function handoverView(cycleId) {
   if (cycle.handover) renderResults(cycle.handover);
 }
 
+function tabOf(hash) {
+  if (hash.startsWith('#/handover')) return 'handover';
+  if (hash === '#/notebook') return 'look';
+  return 'think';
+}
+
+// 引き継ぐタブ: 引継ぎカードがあるいちばん新しい周回を開く。なければ最新の周回。
+async function latestHandover() {
+  const { cycles } = await api('notebook');
+  if (!cycles.length) return show(h('h1', {}, '引き継ぐ'), h('p', { class: 'lead' }, 'まず「考える」で1周回すと、ここで引継ぎカードを書けます。'), h('p', {}, h('a', { class: 'button', href: '#/' }, '考えるへ')));
+  await handoverView((cycles.filter((c) => c.handover).at(-1) ?? cycles.at(-1)).id);
+}
+
 async function router() {
   const hash = location.hash || '#/';
   try {
     const m = hash.match(/^#\/s\/([\w-]+)$/);
     const ho = hash.match(/^#\/handover\/(c\d+)$/);
+    for (const a of document.querySelectorAll('.tabs a')) a.setAttribute('aria-current', a.dataset.tab === tabOf(hash) ? 'page' : 'false');
     if (ho) await handoverView(ho[1]);
+    else if (hash === '#/handover') await latestHandover();
+    else if (hash === '#/ledger') await home();
     else if (hash === '#/new') newSession();
     else if (hash === '#/notebook') await notebookView();
     else if (hash === '#/stretch') stretchView();
     else if (m) await session(m[1]);
-    else await home();
+    else stretchView();
   } catch (ex) {
     show(h('p', { class: 'error', role: 'alert' }, ex.message), h('a', { class: 'button ghost', href: '#/' }, '戻る'));
   }
