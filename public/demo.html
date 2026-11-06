@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDCAI デモ</title>
+<style>
+  :root {
+    --paper: #f6f3ec; --card: #fffdf8; --ink: #20241f; --sub: #646a60; --line: #d9d4c7;
+    --accent: #B84E26; --accent-dark: #8F3A18; --accent-tint: #F6DCCB; --accent-ink: #fff;
+    --mendako: #D0663A; --me: #2E3460; --me-tint: #E7EEF8; --ok: #2d6a4f; --gray: #c9c3b6;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Yu Gothic UI", "Hiragino Sans", "Noto Sans JP", sans-serif; line-height: 1.7; }
+  header { background: var(--accent); color: var(--accent-ink); display: flex; align-items: center; gap: 12px; padding: 10px 20px; }
+  header b { font-size: 18px; letter-spacing: .04em; }
+  header span { font-size: 13px; opacity: .9; white-space: nowrap; }
+  header nav { margin-left: auto; display: flex; gap: 4px; flex-wrap: wrap; }
+  header nav button { all: unset; cursor: pointer; font-size: 13px; padding: 2px 10px; border-radius: 99px; }
+  header nav button[aria-current="true"] { background: var(--accent-ink); color: var(--accent-dark); font-weight: 700; }
+  main { max-width: 980px; margin: 0 auto; padding: 24px 16px 120px; }
+  .slide { display: none; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 28px; min-height: 480px; }
+  .slide.on { display: block; animation: in .35s ease-out; }
+  @keyframes in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .step { color: var(--accent); font-weight: 700; font-size: 14px; margin: 0; }
+  h1 { font-size: 40px; margin: 40px 0 8px; }
+  h2 { font-size: 26px; margin: 4px 0 16px; line-height: 1.4; }
+  .lead { color: var(--sub); }
+  .big { font-size: 22px; font-weight: 700; }
+  .em { color: var(--accent-dark); font-weight: 700; }
+  .note { font-size: 12px; color: var(--sub); margin-top: 20px; }
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .box { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; background: #fff; }
+  .box h3 { margin: 0 0 8px; font-size: 16px; }
+  .box.before { background: #f3f1ec; }
+  .box.after { border: 2px solid var(--accent); }
+  ul.memo { margin: 0; padding-left: 1.2em; }
+  ul.memo li { margin: 2px 0; }
+  .undecided { background: var(--accent-tint); border-radius: 4px; padding: 0 4px; }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+  .tile { border-radius: 10px; padding: 14px; text-align: center; }
+  .tile b { display: block; font-size: 40px; line-height: 1.2; }
+  .tile.self { background: var(--me-tint); color: var(--me); }
+  .tile.ai { background: var(--accent-tint); color: var(--accent-dark); }
+  .tile.own { background: #e3f0e8; color: var(--ok); }
+  .mendakos { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; margin: 10px 0; }
+  .mendako { text-align: center; font-size: 13px; width: 120px; }
+  .mendako svg { display: block; width: 72px; height: 64px; margin: 0 auto; }
+  .mendako b { display: block; }
+  .mendako small { display: block; color: var(--sub); }
+  .q { border-left: 4px solid var(--mendako); padding: 6px 12px; margin: 10px 0; background: #fff; border-radius: 4px; }
+  .q .a { display: block; color: var(--me); margin-top: 4px; }
+  .q .a::before { content: "書き手: "; font-weight: 700; }
+  .bars { display: grid; grid-template-columns: 160px 1fr 52px; gap: 8px 12px; align-items: center; margin: 16px 0; }
+  .bars .lbl { font-size: 14px; text-align: right; }
+  .bars .track { background: #efebe2; border-radius: 6px; height: 28px; overflow: hidden; }
+  .bars .fill { display: block; height: 100%; background: var(--accent); border-radius: 6px; width: 0; transition: width .7s ease-out; }
+  .bars .fill.base { background: var(--gray); }
+  .bars .fill.zero { background: none; }
+  .bars .num { font-weight: 700; font-size: 18px; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th, td { border-bottom: 1px solid var(--line); padding: 8px; text-align: left; vertical-align: top; }
+  th { color: var(--sub); font-weight: 600; font-size: 13px; }
+  td.n { font-weight: 700; font-size: 18px; white-space: nowrap; }
+  .chips span { display: inline-block; width: 30px; height: 30px; line-height: 30px; text-align: center; border-radius: 6px; margin: 2px; font-weight: 700; background: #e3f0e8; color: var(--ok); }
+  .chips span.x { background: var(--accent); color: #fff; }
+  .apple { font-size: 64px; text-align: center; margin: 20px 0 0; }
+  .closing { font-size: 24px; font-weight: 700; text-align: center; line-height: 1.8; }
+  .pager { position: fixed; left: 0; right: 0; bottom: 0; background: #fffdf8ee; border-top: 1px solid var(--line); display: flex; justify-content: center; align-items: center; gap: 16px; padding: 12px; }
+  .pager button { font: inherit; font-weight: 700; border: 0; border-radius: 8px; padding: 10px 26px; cursor: pointer; background: var(--accent); color: var(--accent-ink); }
+  .pager button:hover { background: var(--accent-dark); }
+  .pager button.ghost { background: #fff; color: var(--accent-dark); border: 1px solid var(--accent); }
+  .pager button:disabled { opacity: .35; cursor: default; }
+  .pager .count { color: var(--sub); font-size: 14px; min-width: 60px; text-align: center; }
+  :focus-visible { outline: 3px solid #1d5fa8; outline-offset: 2px; }
+  @media (max-width: 640px) {
+    .slide { padding: 18px; } h1 { font-size: 30px; } h2 { font-size: 21px; }
+    .bars { grid-template-columns: 96px 1fr 40px; } .tiles { grid-template-columns: 1fr; }
+    header nav { display: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <b>PDCAI</b><span>AIだけじゃダメですか？！</span>
+  <nav id="nav" aria-label="場面"></nav>
+</header>
+<main id="deck">
+
+<section class="slide" data-nav="はじめ">
+  <p class="step">見本: 架空のカフェの予約の引継ぎ</p>
+  <h1>AIだけじゃダメですか？！</h1>
+  <p class="big">AIに作らせた引継ぎで、後任が8場面中5場面で止まった。</p>
+  <p class="lead">PDCAIでは、AIは引継ぎを書きません。読んで「ここで止まった」と言うだけ。<br>あなたの言葉で埋めると、後任が止まらなくなります。</p>
+  <div class="mendakos" id="crew"></div>
+  <p class="note">店・人物・予約はすべて架空です。書き手（店長）はAIが演じました。人間の後任役は作者本人です。</p>
+</section>
+
+<section class="slide" data-nav="考える">
+  <p class="step">1. 考える ― まず自分で書く</p>
+  <h2>AIに聞く前に、引き継ぎたいことを自分で書く</h2>
+  <div class="cols">
+    <div class="box before">
+      <h3>店長の最初のメモ（9行）</h3>
+      <ul class="memo">
+        <li>新人は週3日だけ。いない日の予約をどうつなぐか</li>
+        <li>予約は紙のノートが正。カレンダーは補助と伝えたい</li>
+        <li>窓際の2名席は予約に回さない。ここ間違えやすそう</li>
+        <li>ランチは予約なし。ケーキセットは平日14時以降だけ</li>
+        <li>6名以上は貸切。新人は決めずに私から折り返す</li>
+        <li>アレルギーはノートの名前の横に赤で。ナッツ注意</li>
+        <li>よく予約して来ない常連さんがいる。名前は口で言う</li>
+        <li>DMは手が空いたときでいい。翌日までには返す</li>
+        <li>前金やキャンセル料は決めてない。聞かれたら困る</li>
+      </ul>
+    </div>
+    <div>
+      <p>AIは、この時点ではまだ何も見せません。</p>
+      <p>先に書いた分だけが「自分で出せた」に数えられます。</p>
+      <p class="big">自信: 55%</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-nav="突き合わせ">
+  <p class="step">2. 考える ― めんだこ4匹と突き合わせ</p>
+  <h2>AI社員4人が、本人の答えを見ずに検討事項を出す</h2>
+  <div class="mendakos" id="crew2"></div>
+  <p>4人で12個。本人のメモと突き合わせると:</p>
+  <div class="tiles">
+    <div class="tile self"><b>5</b>自分で先に出せた（42%）</div>
+    <div class="tile ai"><b>7</b>AIだけが出した</div>
+    <div class="tile own"><b>4</b>自分だけが出した</div>
+  </div>
+  <p>「窓際の2名席は予約に回さない」「ケーキセットは平日14時以降だけ」は、<span class="em">4人の誰も出さなかった</span>。現場の決めごとは、人の頭の中にしかありません。</p>
+</section>
+
+<section class="slide" data-nav="答える">
+  <p class="step">3. 考える ― AIだけの指摘に、自分の言葉で答える</p>
+  <h2>答えられたこと、答えられなかったこと</h2>
+  <div class="q">電話とDMの二重予約・同時受付で席が重なる<span class="a">予約は全部レジ横の紙の予約ノートに書く。電話でもDMでも、受ける前に必ずノートを見る。</span></div>
+  <div class="q">Instagramアカウントと予約データの引継ぎ・退職時の管理<span class="a">DMは店用スマホで見る。私の個人スマホにも入ってる。<span class="undecided">なくした時どうするかは考えたことがない。</span></span></div>
+  <div class="q">予約を断る・変更する時の言い方が決まっていない<span class="a"><span class="undecided">言い方は決めていない。</span></span></div>
+  <p>7つに答えて、<span class="em">3つは「決めていない」と分かった</span>。AIはここを代わりに決めません。</p>
+</section>
+
+<section class="slide" data-nav="引き継ぐ">
+  <p class="step">4. 引き継ぐ ― 後任テスト</p>
+  <h2>カードだけを読んだ後任AIが、8つの場面で止まった数</h2>
+  <div class="bars" id="bars"></div>
+  <p>止まった場面を見せるたびに、店長が自分の言葉で1行ずつ足しました。AIは書いていません。</p>
+</section>
+
+<section class="slide" data-nav="止まった理由">
+  <p class="step">4. 引き継ぐ ― 止まった理由が変わっていく</p>
+  <h2>最後の2つは、書き方ではなく「決めること」で消えた</h2>
+  <table>
+    <tr><th>カード</th><th>止まった</th><th>止まった理由</th></tr>
+    <tr><td>1〜3回目</td><td class="n">4→3→2</td><td>書いていない（頭の中の決めごと）</td></tr>
+    <tr><td>4回目</td><td class="n">2</td><td>足した行どうしが食い違う（土日の4行）</td></tr>
+    <tr><td>5回目</td><td class="n">2</td><td>1行にまとめた。残りは「<span class="undecided">決めてない</span>」</td></tr>
+    <tr><td>6回目</td><td class="n" style="color:var(--accent)">0</td><td>店長が2つを決めた（土日の予約、重なったときの優先）</td></tr>
+  </table>
+  <p>後任テストは、書き漏れだけでなく<span class="em">前任者がまだ決めていないこと</span>も見つけます。</p>
+</section>
+
+<section class="slide" data-nav="人間の後任">
+  <p class="step">5. 人間の後任がやってみた（作者本人）</p>
+  <h2>人は止まらない。その代わり、ずれる</h2>
+  <table>
+    <tr><th></th><th>止まった</th><th>ずれた</th></tr>
+    <tr><td>後任AI（カード3回目）</td><td class="n">2 / 8</td><td class="n">0</td></tr>
+    <tr><td>本人 1周目（カード3回目）</td><td class="n">0 / 8</td><td class="n" style="color:var(--accent)">2</td></tr>
+    <tr><td>本人 2周目（「迷ったら折り返す」を1行足したカード）</td><td class="n">1 / 8</td><td class="n">0</td></tr>
+  </table>
+  <p>AIは書いていないことを推測しないので止まる。人は推測して動くので、短い一文を自分なりに読んでずれる。<br><span class="em">止まった数だけでは、人間の引継ぎの失敗は見えない。</span></p>
+  <p class="note">本人の2周目は、1周目の照合を見たあと（初見ではない）。</p>
+</section>
+
+<section class="slide" data-nav="初めての場面">
+  <p class="step">6. 初めての8場面（本人にとっても初見）</p>
+  <h2>本人と後任AIが、まったく同じ3場面で止まった</h2>
+  <div class="cols">
+    <div class="box"><h3>本人</h3><div class="chips" data-x="2,5,8"></div><p>止まった 3/8 ・ ずれ 0</p></div>
+    <div class="box"><h3>後任AI</h3><div class="chips" data-x="2,5,8"></div><p>止まった 3/8</p></div>
+  </div>
+  <p>3つとも、止まるのが正しい場面でした。「土日は予約を受けない」と決めた<span class="em">前に入っていた予約</span>をどう扱うかが、カードに無い。次に足す1行が見えました。</p>
+</section>
+
+<section class="slide" data-nav="引継ぎ書">
+  <p class="step">成果物1 ― 引継ぎ書（before / after）</p>
+  <h2>同じ8場面で、止まった数 5 → 0</h2>
+  <div class="cols">
+    <div class="box before">
+      <h3>before: AIだけのマニュアル（止まった 5/8）</h3>
+      <ul class="memo">
+        <li>前金・キャンセル料について聞かれたら：その場で答えない</li>
+        <li>【要確認】店長の連絡先、店長がつかまらないときの対応を書き足すこと</li>
+        <li>【要確認】予約の受付時間・カレンダーの場所と使い方を店長に聞いて書き足すこと</li>
+      </ul>
+      <p class="note">整っていて抜けも少なく見える。でも、頭の中にしかない決めごとは書けない。</p>
+    </div>
+    <div class="box after">
+      <h3>after: PDCAIの引継ぎカード（6回目の清書版・止まった 0/8）</h3>
+      <ul class="memo">
+        <li>キャンセル料はかからない（今まで取ったことはない）。</li>
+        <li>予約時間から10分遅れたら電話。20分過ぎても来なければ席を空けてよい。</li>
+        <li>店長の個人スマホのInstagramにもDMが来ることがある。</li>
+        <li><span class="undecided">店用スマホをなくしたときの対応は決まっていない（店長に確認）。</span></li>
+      </ul>
+      <p class="note">全部、店長の言葉。決まっていないことは「決まっていない」と書く。</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-nav="思考進化">
+  <p class="step">成果物2 ― 思考進化シート（before / after）</p>
+  <h2>1周後、何も見ずにもう一度書いた</h2>
+  <div class="cols">
+    <div class="box before">
+      <h3>before: 最初のメモ（9行・自信55%）</h3>
+      <ul class="memo">
+        <li>予約は紙のノートが正。カレンダーは補助と伝えたい</li>
+        <li>DMは手が空いたときでいい。翌日までには返す</li>
+        <li>前金やキャンセル料は決めてない。聞かれたら困る</li>
+      </ul>
+    </div>
+    <div class="box after">
+      <h3>after: 1周後（10行・自信55%）</h3>
+      <ul class="memo">
+        <li>店のスマホと私の個人スマホ、両方DMが見えて重なるかも</li>
+        <li><span class="undecided">DMで先に席を押さえる？どこで「予約確定」か決めてない</span></li>
+        <li>10分遅れで電話、20分で席を戻す。言ってなかったので伝える</li>
+        <li><span class="undecided">電話番号やDMをいつまで残していいか分からない</span></li>
+        <li><span class="undecided">店のスマホをなくした時やアカウントの引継ぎは考えてない</span></li>
+      </ul>
+    </div>
+  </div>
+  <p>新しく言えるようになった7行のうち4行は、<span class="em">「まだ決めていない」と自分で気づいた行</span>。自信の数字は変わらなかった。答えを増やすより、見えていなかった所が見えるようになった。</p>
+</section>
+
+<section class="slide" data-nav="おわり">
+  <div class="apple" aria-hidden="true">🍏</div>
+  <p class="closing">AIは書かない。<br>読んで「ここで止まった」と言うだけ。<br>あなたの言葉で埋めたら、止まらなくなった。</p>
+  <p class="lead" style="text-align:center">引き継ぐたびに、言葉にしていなかった判断が言葉になる。</p>
+</section>
+
+</main>
+<div class="pager">
+  <button class="ghost" id="prev">◀ もどる</button>
+  <span class="count" id="count"></span>
+  <button id="next">次へ ▶</button>
+</div>
+<script>
+const MENDAKO = (label, role) => `<div class="mendako"><svg viewBox="0 0 72 64" aria-hidden="true">
+  <path d="M8 40 Q8 8 36 8 Q64 8 64 40 Q58 36 52 44 Q46 36 40 44 Q36 38 32 44 Q26 36 20 44 Q14 36 8 40Z" fill="var(--mendako)"/>
+  <ellipse cx="14" cy="14" rx="6" ry="4" fill="var(--mendako)" transform="rotate(-30 14 14)"/>
+  <ellipse cx="58" cy="14" rx="6" ry="4" fill="var(--mendako)" transform="rotate(30 58 14)"/>
+  <circle cx="27" cy="26" r="3" fill="#20241f"/><circle cx="45" cy="26" r="3" fill="#20241f"/></svg>
+  <b>${label}</b><small>${role}</small></div>`;
+const CREW = [['新入社員', '初めて触る人が迷う所'], ['法務・リスク管理', '壊れる・揉める所'], ['財務', 'お金と続け方'], ['ユーザー', '使う人の困りごと']];
+for (const id of ['crew', 'crew2']) document.getElementById(id).innerHTML = CREW.map(([a, b]) => MENDAKO(a, b)).join('');
+
+const BARS = [['AIだけのマニュアル', 5, 'base'], ['カード1回目', 4], ['2回目', 3], ['3回目', 2], ['4回目', 2], ['5回目', 2], ['6回目', 0]];
+const bars = document.getElementById('bars');
+bars.innerHTML = BARS.map(([l, n, c]) => `<span class="lbl">${l}</span><span class="track"><span class="fill ${c || ''}" data-w="${n / 8 * 100}"></span></span><span class="num">${n}</span>`).join('');
+
+document.querySelectorAll('.chips').forEach((el) => {
+  const x = el.dataset.x.split(',');
+  el.innerHTML = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `<span class="${x.includes(String(n)) ? 'x' : ''}">${n}</span>`).join('');
+});
+
+const slides = [...document.querySelectorAll('.slide')];
+const nav = document.getElementById('nav');
+nav.innerHTML = slides.map((s, i) => `<button data-i="${i}">${s.dataset.nav}</button>`).join('');
+let at = 0;
+function show(i) {
+  at = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((s, k) => s.classList.toggle('on', k === at));
+  nav.querySelectorAll('button').forEach((b, k) => b.setAttribute('aria-current', k === at));
+  document.getElementById('count').textContent = `${at + 1} / ${slides.length}`;
+  document.getElementById('prev').disabled = at === 0;
+  document.getElementById('next').disabled = at === slides.length - 1;
+  bars.querySelectorAll('.fill').forEach((f) => { f.style.width = '0'; });
+  if (slides[at].contains(bars)) setTimeout(() => bars.querySelectorAll('.fill').forEach((f) => { f.style.width = f.dataset.w + '%'; }), 50);
+  history.replaceState(null, '', `#${at + 1}`);
+}
+document.getElementById('prev').onclick = () => show(at - 1);
+document.getElementById('next').onclick = () => show(at + 1);
+nav.onclick = (e) => { if (e.target.dataset.i) show(+e.target.dataset.i); };
+addEventListener('hashchange', () => show((parseInt(location.hash.slice(1), 10) || 1) - 1));
+addEventListener('keydown', (e) => { if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); show(at + 1); } if (e.key === 'ArrowLeft') show(at - 1); });
+show((parseInt(location.hash.slice(1), 10) || 1) - 1);
+</script>
+</body>
+</html>

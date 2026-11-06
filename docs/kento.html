@@ -28,6 +28,66 @@
 <h1>pdcaai 検討ページ</h1>
 <p class="lead">見た目や構成の検討を、新しいものから上に積み上げます。古い検討は消さずに残します。</p>
 
+<article id="2026-11-06-color">
+<p class="date">2026-11-06（3つ目）</p>
+<h2>テーマカラー: Claudeのオレンジより少し濃いオレンジ（3案）</h2>
+<h3>何を変えたか</h3>
+<ul>
+  <li>UI/UXのテーマカラーをオレンジに決めるため、Claudeのオレンジ（#D97757）を基準に、濃さの違う3案を並べた。</li>
+  <li>各案に「メイン・濃い（押したとき）・薄い（背景）」の3色を付け、ボタン・見出し・棒グラフ・めんだこの見え方で比べた。</li>
+</ul>
+<h3>修正理由</h3>
+<ul>
+  <li>本人の指定「ちょっと濃いオレンジ」。同じ色にせず、Claudeとつながって見える近さに留める。</li>
+  <li>ボタンの白文字が読めること（コントラスト4.5以上）を、濃さを決める基準にした。</li>
+</ul>
+<style>
+  .pal { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px; margin:16px 0; }
+  .pal section { border:1px solid var(--line); border-radius:12px; padding:14px; background:#FBF8F1; }
+  .pal h4 { margin:0 0 8px; font-size:16px; }
+  .chips { display:flex; gap:6px; margin-bottom:10px; }
+  .chips div { flex:1; border-radius:8px; height:54px; font-size:11px; display:flex; align-items:flex-end; padding:4px 6px; box-sizing:border-box; border:1px solid #0001; }
+  .mock .bar-h { color:#fff; border-radius:8px 8px 0 0; padding:8px 12px; font-weight:700; }
+  .mock .body { background:#fff; border:1px solid var(--line); border-top:0; border-radius:0 0 8px 8px; padding:10px 12px; font-size:14px; }
+  .mock .btn { display:inline-block; color:#fff; border-radius:6px; padding:6px 14px; font-weight:700; margin:6px 6px 6px 0; }
+  .mock .btn.ghost { background:#fff !important; }
+  .mock .bars { display:flex; gap:8px; align-items:flex-end; height:56px; margin-top:6px; }
+  .mock .bars span { width:28px; border-radius:4px 4px 0 0; }
+  .mock .tag { display:inline-block; border-radius:99px; padding:1px 10px; font-size:12px; font-weight:700; }
+  .ct { font-size:12px; color:var(--sub); margin-top:8px; }
+</style>
+<div class="pal">
+  <section style="--m:#D0663A;--d:#A8461F;--t:#FBEDE4">
+    <h4>A 明るめ #D0663A</h4>
+    <div class="chips"><div style="background:#D97757;color:#fff">Claude<br>#D97757</div><div style="background:var(--m);color:#fff">メイン</div><div style="background:var(--d);color:#fff">濃い</div><div style="background:var(--t)">薄い</div></div>
+    <div class="mock"><div class="bar-h" style="background:var(--m)">PDCAI ｜ 考える</div><div class="body">
+      <span class="tag" style="background:var(--t);color:var(--d)">自分で先に 5</span><br>
+      <span class="btn" style="background:var(--m)">次へ ▶</span><span class="btn ghost" style="color:var(--d);border:1px solid var(--m)">もどる</span>
+      <div class="bars"><span style="height:40%;background:#d9d4c7"></span><span style="height:65%;background:var(--m)"></span><span style="height:90%;background:var(--d)"></span></div></div></div>
+    <p class="ct">白文字 3.7（大きい文字・塗りならOK、小さいボタン文字は濃い色を使う）。一番Claudeに近い。</p>
+  </section>
+  <section style="--m:#B84E26;--d:#8F3A18;--t:#F6DCCB">
+    <h4>B 少し濃い #B84E26（推奨）</h4>
+    <div class="chips"><div style="background:#D97757;color:#fff">Claude<br>#D97757</div><div style="background:var(--m);color:#fff">メイン</div><div style="background:var(--d);color:#fff">濃い</div><div style="background:var(--t)">薄い</div></div>
+    <div class="mock"><div class="bar-h" style="background:var(--m)">PDCAI ｜ 考える</div><div class="body">
+      <span class="tag" style="background:var(--t);color:var(--d)">自分で先に 5</span><br>
+      <span class="btn" style="background:var(--m)">次へ ▶</span><span class="btn ghost" style="color:var(--d);border:1px solid var(--m)">もどる</span>
+      <div class="bars"><span style="height:40%;background:#d9d4c7"></span><span style="height:65%;background:var(--m)"></span><span style="height:90%;background:var(--d)"></span></div></div></div>
+    <p class="ct">白文字 5.1（小さい文字もOK）。Claudeの面影を残しつつ一段濃い。動画で白飛びしにくい。</p>
+  </section>
+  <section style="--m:#9A3F1B;--d:#732C10;--t:#F1D6C6">
+    <h4>C 深め #9A3F1B</h4>
+    <div class="chips"><div style="background:#D97757;color:#fff">Claude<br>#D97757</div><div style="background:var(--m);color:#fff">メイン</div><div style="background:var(--d);color:#fff">濃い</div><div style="background:var(--t)">薄い</div></div>
+    <div class="mock"><div class="bar-h" style="background:var(--m)">PDCAI ｜ 考える</div><div class="body">
+      <span class="tag" style="background:var(--t);color:var(--d)">自分で先に 5</span><br>
+      <span class="btn" style="background:var(--m)">次へ ▶</span><span class="btn ghost" style="color:var(--d);border:1px solid var(--m)">もどる</span>
+      <div class="bars"><span style="height:40%;background:#d9d4c7"></span><span style="height:65%;background:var(--m)"></span><span style="height:90%;background:var(--d)"></span></div></div></div>
+    <p class="ct">白文字 6.8。落ち着くが茶色寄りで、オレンジらしさは弱い。</p>
+  </section>
+</div>
+<p>めんだこの体の色は、UIより明るいClaudeのオレンジ（#D97757）寄りにすると、濃いUIの上で浮き上がって見える。</p>
+</article>
+
 <article id="2026-11-06-manual">
 <p class="date">2026-11-06（2つ目）</p>
 <h2>マニュアルを「後任が止まった質問」から作り、行ごとに出どころと確認済みかを付ける</h2>
@@ -68,7 +128,7 @@
   .man .ok { color:#2E6B3A; } .man .ng { color:#B5531A; }
 </style>
 <div class="man">
-  <div class="flow"><b>いつもの流れ:</b><span>月末 請求書を送る</span>→<span>期日 入金を見る</span>→<span>3日後 1回目の連絡</span>→<span>14日後 上の人に相談</span></div>
+  <div class="flow"><b>いつもの流れ:</b><span>締め日 請求書を送る</span>→<span>期日 入金を見る</span>→<span>数日後 1回目の連絡</span>→<span>しばらく続いたら 上の人に相談</span></div>
   <details open>
     <summary>Q. 期日を過ぎても入金がない。まず何をする？</summary>
     <div class="row"><span class="src me">本人</span>まず入金日の行き違いを疑う。銀行の明細をもう一度見てから、やわらかい文面で1回目の連絡。</div>
@@ -77,7 +137,7 @@
   </details>
   <details>
     <summary>Q. 「来月まとめて払う」と言われた。受けていい？</summary>
-    <div class="row"><span class="src me">本人</span>1か月までは自分で受けてよい。それより長いときと、2回目のときは必ず相談。</div>
+    <div class="row"><span class="src me">本人</span>少しの延長なら自分で受けてよい。長くなるときと、2回目のときは必ず相談。</div>
     <p class="meta"><span class="ok">● 後任テスト通過</span>・確認 2026-11-06・出した人: 財務</p>
   </details>
   <details>
