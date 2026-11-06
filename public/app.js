@@ -495,15 +495,42 @@ function cycleBars(stats) {
     h('p', { class: 'bar-key' }, h('i', { class: 'c-self' }), '自分で見つけた', h('i', { class: 'c-answered' }), 'AIの指摘に答えた', h('i', { class: 'c-ai' }), 'AIだけ'));
 }
 
+// 伸びを見る: 周回ごとのタイルの木を横に並べる。タイルは本人の言葉、葉の色は 緑=自分で見つけた／オレンジ=AIの指摘に答えた。
+// 下の根元（題材）から上へ、1枚ずつ葉が開く。AIだけの項目はタイルにせず数で添える。
+function tileTrees(cycles) {
+  const pairs = (list) => list.reduce((rows, x, i) => (i % 2 ? rows.at(-1).push(x) : rows.push([x]), rows), []);
+  const fork = () => svg('svg', { class: 'tt-fork', viewBox: '0 0 100 24', preserveAspectRatio: 'none', 'aria-hidden': 'true' },
+    svg('path', { d: 'M50 24 C50 10 25 14 25 0' }), svg('path', { d: 'M50 24 C50 10 75 14 75 0' }));
+  return h('section', { class: 'card' },
+    h('h2', {}, '思考の木（周回ごと）'),
+    h('p', { class: 'bar-key' }, h('i', { class: 'c-self' }), '自分で見つけた', h('i', { class: 'c-answered' }), 'AIの指摘に答えた', ' 💡=前に見落とした型を自分で出せた'),
+    h('div', { class: 'tt-row' }, cycles.map((c, ci) => {
+      let n = 0;
+      const delay = () => `animation-delay:${ci * 1.2 + (n++) * 0.18}s`;
+      const tile = (o) => h('div', { class: `tt-tile ${o.phase === 'hint' ? 'answered' : 'self'}`, title: o.text, style: delay() },
+        h('span', { class: 'tt-leaf' }), h('div', { class: 'tt-sq' }, o.recalls ? '💡 ' : '', o.text));
+      const ai = c.items.filter((i) => i.status === 'ai').length;
+      const rows = pairs(c.own).map((row) => h('div', { class: 'tt-pair' }, row.map(tile)));
+      return h('div', { class: 'tt-tree' },
+        h('div', { class: 'tt-head' }, `${ci + 1}周目`, h('span', { class: 'muted' }, ` ${day(c.createdAt)}`)),
+        h('div', { class: 'tt-apple', style: `animation-delay:${ci * 1.2 + c.own.length * 0.18 + 0.2}s` }, '🍏', h('small', {}, `自分で見つけた ${c.own.filter((o) => o.phase !== 'hint').length}／AIの指摘に答えた ${c.own.filter((o) => o.phase === 'hint').length}`)),
+        h('div', { class: 'tt-stack' }, rows.flatMap((r, i) => (i ? [fork(), r] : [r])).reverse(), fork()),
+        h('div', { class: 'tt-root' }, c.project),
+        ai ? h('p', { class: 'muted tt-ai' }, `AIだけが出した ${ai}`) : null);
+    })));
+}
+
 async function notebookView() {
   setChain([]);
   const { cycles, stats, hints, lenses, humanOnly, reunions } = await api('notebook');
-  drawGrowthTree(cycles, lenses);
+  drawGrowthTree([], lenses);
+  document.getElementById('shell').classList.toggle('wide', cycles.length > 0);
   const pctText = (v) => (v == null ? '-' : `${v}%`);
   show(
-    h('h1', {}, '観点帳'),
+    h('h1', {}, '伸びを見る'),
     h('p', { class: 'lead' }, '自分で先に出した検討事項と、AI社員だけが出したものの記録です。自分で出せるようになった観点から、ヒント（補助輪）が外れていきます。'),
     cycles.length ? null : h('p', { class: 'muted' }, 'まだ記録はありません。Claude Code で pdcaai スキルを使うと、ここに積まれます。'),
+    cycles.length ? tileTrees(cycles) : null,
     stats.length ? cycleBars(stats) : null,
     stats.length ? growthTable(stats, lenses, reunions) : null,
     stats.length ? h('section', { class: 'card' },
@@ -689,6 +716,7 @@ async function handoverView(cycleId) {
 }
 
 function tabOf(hash) {
+  if (hash !== '#/notebook') document.getElementById('shell').classList.remove('wide');
   if (hash.startsWith('#/handover')) return 'handover';
   if (hash === '#/notebook') return 'look';
   return 'think';
