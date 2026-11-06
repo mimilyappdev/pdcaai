@@ -1,0 +1,11 @@
+# 公開版に載せるのは public/ api/ src/ plugin/ と package*.json だけ。手元の記録・素材・作業物は上げない。
+data/
+work/
+画像/
+docs/
+sim/
+test/
+.claude/
+.claude-plugin/
+.env
+.env.*

@@ -55,3 +55,24 @@ test('カードをめくる前は、AI社員の結果をブラウザへ送らな
     delete process.env.PDCAAI_NOTEBOOK;
   }
 });
+
+test('公開版は合言葉がないとAIを呼べず、観点帳はブラウザから受け取って更新後を返す', async () => {
+  const server = buildServer({ provider: mockProvider() }, 'mock', 0, { passcode: 'aikotoba' });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${server.address().port}/api`;
+  const post = (path, body, pass = 'aikotoba') => fetch(base + path, { method: 'POST', headers: { 'content-type': 'application/json', 'x-pdcai-pass': pass }, body: JSON.stringify(body) }).then(async (r) => ({ status: r.status, ...(await r.json()) }));
+  try {
+    assert.equal((await post('/stretch', { project: 'カフェの予約', confidenceBefore: 60 }, 'wrong')).status, 401);
+    assert.equal((await post('/sessions', {})).status, 404);
+    const stretch = { project: 'カフェの予約', summary: '', confidenceBefore: 60 };
+    const st = await post('/stretch', stretch);
+    const out = await post(`/stretch/${st.id}/answer`, { own: ['最初の画面が分かりにくい'], stretch, book: { cycles: [] } });
+    assert.equal(out.book.cycles.length, 1);
+    const ho = await post(`/handover/${out.cycle.id}`, { card: { flow: '申込 → 入稿 → 開始' }, book: out.book });
+    assert.equal(ho.book.cycles[0].handover.tests.length, 1);
+    const nb = await post('/notebook', { book: ho.book });
+    assert.equal(nb.stats.length, 1);
+  } finally {
+    server.close();
+  }
+});

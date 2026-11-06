@@ -5,14 +5,38 @@ const treeBox = document.getElementById('tree');
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const tree = { chain: [], selected: null, known: new Set() };
 
+// 公開版（hosted）では、観点帳を各自のブラウザに置き、呼び出しのたびに送って更新後を受け取る。最初はカフェの見本から始まる。
+let hosted = false;
+const BOOK_KEY = 'pdcai-book';
+const PASS_KEY = 'pdcai-pass';
+const store = {
+  get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* 保存できない環境では、このタブの間だけ使う */ } },
+};
+let memoryBook = null;
+async function myBook() {
+  if (memoryBook) return memoryBook;
+  const saved = store.get(BOOK_KEY);
+  memoryBook = saved ? JSON.parse(saved) : await fetch('/sample-book.json').then((r) => r.json());
+  return memoryBook;
+}
+function passcode() {
+  let pass = store.get(PASS_KEY);
+  if (!pass) { pass = (prompt('審査用の合言葉を入れてください') ?? '').trim(); store.set(PASS_KEY, pass); }
+  return pass;
+}
+
 async function api(path, body) {
+  if (hosted && path !== 'meta') body = { ...(body ?? {}), book: await myBook() };
   const res = await fetch(`/api/${path}`, body === undefined ? {} : {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', ...(hosted ? { 'x-pdcai-pass': encodeURIComponent(passcode()) } : {}) },
     body: JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({}));
+  if (res.status === 401) store.set(PASS_KEY, '');
   if (!res.ok) throw new Error(data.error || '通信に失敗しました');
+  if (data.book) { memoryBook = data.book; store.set(BOOK_KEY, JSON.stringify(data.book)); }
   return data;
 }
 
@@ -602,7 +626,8 @@ function stretchView() {
     h('p', { class: 'lead' }, '「これで完璧！」と思ったら、AI社員4人を呼びます。先に自分で「足りないもの」を考えてから、カードをめくります。'),
     form(async (v) => {
       app.append(thinking('めんだこたちが集まっています'));
-      const st = await api('stretch', { project: v.project, summary: v.summary, confidenceBefore: Number(v.confidence) });
+      const input = { project: v.project, summary: v.summary, confidenceBefore: Number(v.confidence) };
+      const st = { ...await api('stretch', input), input };
       stretchThink(st);
     },
     field('作るもの・始めること', 'project', { hint: '一言で' }),
@@ -621,7 +646,8 @@ function stretchThink(st) {
     form(async (v) => {
       const own = v.own.split('\n').map((s) => s.trim()).filter(Boolean);
       app.append(thinking('めんだこたちが、あなたの答えと突き合わせています'));
-      const out = await api(`stretch/${st.id}/answer`, { own });
+      const out = await api(`stretch/${st.id}/answer`, { own, stretch: st.input });
+      st.input.cycleId = out.cycle.id;
       stretchReveal(st, out);
     },
     h('label', {}, '足りないと思うこと', h('textarea', { name: 'own', rows: 6, maxlength: 3000 })),
@@ -666,7 +692,7 @@ function stretchReveal(st, { cycle, summary }) {
       h('p', { class: 'muted' }, 'あなたの感じたままで大丈夫です。スキル（文字）で回したときと比べるために残します。'),
       form(async (v) => {
         if (feel == null) throw new Error('手応えを1つ選んでください');
-        await api(`stretch/${st.id}/feel`, { feel, confidenceAfter: Number(v.confidence) });
+        await api(`stretch/${st.id}/feel`, { feel, confidenceAfter: Number(v.confidence), stretch: st.input });
         show(h('h1', {}, '記録しました'),
           h('p', { class: 'lead' }, '次は、人に渡せる1枚の引継ぎカードにします。書くのはあなたの言葉だけです。'),
           h('p', {}, h('a', { class: 'button', href: `#/handover/${cycle.id}` }, '引継ぎカードを書く'), ' ', h('a', { class: 'button ghost', href: '#/notebook' }, '観点帳の木を見る')));
@@ -769,12 +795,14 @@ async function router() {
   }
 }
 
-api('meta').then(({ provider }) => {
-  if (provider === 'mock') {
+api('meta').then((meta) => {
+  hosted = !!meta.hosted;
+  if (meta.provider === 'mock') {
     const mode = document.getElementById('mode');
     mode.textContent = 'デモ: AIを使わない固定応答';
     mode.hidden = false;
   }
-}).catch(() => {});
-window.addEventListener('hashchange', router);
-router();
+}).catch(() => {}).finally(() => {
+  window.addEventListener('hashchange', router);
+  router();
+});
