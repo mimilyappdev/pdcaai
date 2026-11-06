@@ -700,10 +700,16 @@ async function handoverView(cycleId) {
     const grid = h('div', { class: 'stuck-grid', 'aria-hidden': 'true' }, last.results.map((_, i) => h('span', {}, String(i + 1))));
     // ○×を1つずつ点ける。
     last.results.forEach((r, i) => setTimeout(() => { grid.children[i].className = r.result === 'できた' ? 'pass' : 'stuck'; }, 300 + i * 350));
+    // 初めての場面（scenes: 'unseen'）で試した回は、同じ場面の推移と分けて並べる。before は同じ場面での人間とAIの前回の結果。
+    const seen = handover.tests.filter((t) => t.scenes !== 'unseen');
+    const unseen = handover.tests.filter((t) => t.scenes === 'unseen');
+    const trend = (list) => list.map((t) => t.stuck).join(' → ');
     results.replaceChildren(h('div', { class: 'card' },
-      h('h2', {}, `後任AIテスト ${handover.tests.length}回目`),
+      h('h2', {}, `後任AIテスト ${handover.tests.length}回目`, last.scenes === 'unseen' ? '（初めての場面）' : ''),
       h('div', { class: 'stuck-big' }, h('b', {}, String(last.stuck)), h('span', {}, `/ ${last.results.length} で止まった`)),
-      handover.tests.length > 1 ? h('p', { class: 'stuck-trend' }, `止まった数 ${handover.tests.map((t) => t.stuck).join(' → ')}`) : null,
+      seen.length > 1 ? h('p', { class: 'stuck-trend' }, `${unseen.length ? '同じ場面で ' : ''}止まった数 ${trend(seen)}`) : null,
+      unseen.length ? h('div', { class: 'trend-break' }, h('small', {}, `ここから初めての${unseen[0].results.length}場面`),
+        h('p', { class: 'stuck-trend' }, unseen.map((t) => (t.before ? `人間 ${t.before.human}・AI ${t.before.ai}（前のカード） → AI ${t.stuck}` : `AI ${t.stuck}`)).join(' → '))) : null,
       grid,
       h('ul', { class: 'list test-results' }, last.results.map((r) => h('li', { class: r.result === 'できた' ? 'pass' : 'stuck' },
         h('small', {}, r.result), h('div', {}, r.job),
