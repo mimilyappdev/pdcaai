@@ -599,7 +599,7 @@ const ITEM_LABEL = { self: '自分でも出せた', hint: 'ヒントで出せた
 
 // AI社員4人は、作者が描いためんだこ。全員オレンジで、持ち物で見分ける。
 function mendako(lens, size = 100) {
-  return h('img', { class: 'mendako', src: `/img/mendako-${lens}.png`, alt: '', width: size, height: Math.round(size * 0.7) });
+  return h('img', { class: 'mendako', src: `/img/mendako-${lens}.png`, alt: '', width: size, height: Math.round(size * 0.77) });
 }
 
 // AIの返事待ち。考え中のめんだこを出す。

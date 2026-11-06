@@ -210,6 +210,11 @@ button.ghost, .button.ghost { color: var(--ink); background: transparent; border
 .stretch-card .stretch-face.front, .stretch-card .stretch-face.back { border-top-color: var(--lens); }
 .stretch-card .stretch-face.front { background: var(--lens-bg); }
 .mendako { display: block; object-fit: contain; }
+/* 4人を少しずつずらして上下にぴこぴこ。 */
+.stretch-card .mendako { animation: bob 1.4s ease-in-out infinite alternate; }
+.stretch-card:nth-child(2) .mendako { animation-delay: -.35s; }
+.stretch-card:nth-child(3) .mendako { animation-delay: -.7s; }
+.stretch-card:nth-child(4) .mendako { animation-delay: -1.05s; }
 .stretch-face .mendako { margin-bottom: 4px; }
 .slot { display: block; margin: 14px 0; font-weight: 700; }
 .slot textarea { font-weight: 400; }
@@ -230,7 +235,7 @@ button.ghost, .button.ghost { color: var(--ink); background: transparent; border
 
 /* リデザイン 2026-11-06: 考え中のめんだこ、止まった数、周回の棒グラフ */
 .thinking { display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin: 12px 0; background: var(--card); border: 1px solid var(--line); border-radius: 12px; color: var(--accent-dark); font-weight: 700; }
-.thinking img { width: 72px; height: 72px; object-fit: contain; animation: bob 1.2s ease-in-out infinite alternate; }
+.thinking img { width: 84px; height: 64px; object-fit: contain; animation: bob 1.2s ease-in-out infinite alternate; }
 @keyframes bob { from { transform: translateY(0); } to { transform: translateY(-6px); } }
 .stuck-big { display: flex; align-items: flex-end; gap: 12px; margin: 4px 0 8px; }
 .stuck-big b { font-size: 72px; line-height: 1; color: var(--accent); }
@@ -248,7 +253,7 @@ button.ghost, .button.ghost { color: var(--ink); background: transparent; border
 .bar-key { font-size: 13px; color: var(--sub); }
 .bar-key i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin: 0 4px 0 12px; vertical-align: -1px; }
 .c-self { background: #009E73; } .c-answered { background: #B84E26; } .c-ai { background: #F6DCCB; }
-@media (prefers-reduced-motion: reduce) { .thinking img, .cycle-bars .col i { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .thinking img, .stretch-card .mendako, .cycle-bars .col i { animation: none; } }
 
 /* 伸びを見る: 横並びのタイルの木（作者のスケッチから） */
 main.wide { max-width: 1240px; }
