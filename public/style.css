@@ -266,9 +266,9 @@ main.wide { max-width: 1240px; }
 .tt-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 34px; padding: 14px 24px; }
 .tt-pair:has(> :only-child) { grid-template-columns: 1fr; padding: 6px 25%; }
 .tt-fork { display: block; width: 100%; height: 22px; }
-.tt-fork path { fill: none; stroke: #9c8a6c; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+.tt-fork path { fill: none; stroke: #9c8a6c; stroke-width: 2.5; vector-effect: non-scaling-stroke; stroke-dasharray: 400; stroke-dashoffset: 400; animation: vine .45s ease-out forwards; animation-delay: inherit; }
 .tt-tile { position: relative; animation: pop .45s ease-out both; }
-.tt-leaf { position: absolute; inset: -12px -12px -12px -18px; border-radius: 85% 0 85% 0; border: 2px solid var(--leaf); background: var(--leaf-bg); transform: rotate(-6deg); transform-origin: 0 100%; animation: unfurl .6s cubic-bezier(.3,1.5,.5,1) both; animation-delay: inherit; }
+.tt-leaf { position: absolute; inset: -12px -12px -12px -18px; border-radius: 85% 0 85% 0; border: 2px solid var(--leaf); background: var(--leaf-bg); transform: rotate(-6deg); transform-origin: 0 100%; animation: unfurl .9s cubic-bezier(.3,1.4,.5,1) both; animation-delay: inherit; }
 .tt-leaf::after { content: ''; position: absolute; left: 6%; bottom: 10%; width: 112%; height: 2px; background: var(--leaf); opacity: .35; transform-origin: 0 50%; transform: rotate(-14deg); }
 .tt-tile.self { --leaf: #009E73; --leaf-bg: #e3f0e8; }
 .tt-tile.answered { --leaf: #B84E26; --leaf-bg: #F6DCCB; }
@@ -285,6 +285,9 @@ main.wide { max-width: 1240px; }
 .tt-bud { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--sub); }
 .tt-bud span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.9); } to { opacity: 1; transform: none; } }
-@keyframes unfurl { from { transform: scale(0) rotate(-35deg); } to { transform: rotate(-6deg); } }
-@media (prefers-reduced-motion: reduce) { .tt-tile, .tt-leaf, .tt-apple, .tt-buds { animation: none; } }
+/* 葉: 小さな芽がふくらんでから、ひらく。 */
+@keyframes unfurl { 0% { transform: scale(0) rotate(-40deg); } 35% { transform: scale(.28) rotate(-40deg); } 100% { transform: rotate(-6deg); } }
+@keyframes vine { to { stroke-dashoffset: 0; } }
+.tt-bud { animation: pop .4s ease-out both; }
+@media (prefers-reduced-motion: reduce) { .tt-tile, .tt-leaf, .tt-apple, .tt-buds, .tt-bud, .tt-fork path { animation: none; } .tt-fork path { stroke-dashoffset: 0; } }
 .right-stop { color: #4F6D8F; font-weight: 700; margin-top: 0; }

@@ -525,14 +525,19 @@ function cycleBars(stats) {
 function tileTrees(cycles, lenses = {}) {
   const icon = (lens) => h('img', { src: `/img/mendako-${lens}.png`, alt: '' });
   const pairs = (list) => list.reduce((rows, x, i) => (i % 2 ? rows.at(-1).push(x) : rows.push([x]), rows), []);
-  const fork = () => svg('svg', { class: 'tt-fork', viewBox: '0 0 100 24', preserveAspectRatio: 'none', 'aria-hidden': 'true' },
+  // 蔓は、その上の段の葉が開く少し前に、下から伸びる。
+  const fork = (at) => svg('svg', { class: 'tt-fork', viewBox: '0 0 100 24', preserveAspectRatio: 'none', 'aria-hidden': 'true', style: `animation-delay:${Math.max(at, 0)}s` },
     svg('path', { d: 'M50 24 C50 10 25 14 25 0' }), svg('path', { d: 'M50 24 C50 10 75 14 75 0' }));
+  const STEP = 0.3;
   return h('section', { class: 'card' },
     h('h2', {}, '思考の木（周回ごと）'),
     h('p', { class: 'bar-key' }, h('i', { class: 'c-self' }), '自分で見つけた', h('i', { class: 'c-answered' }), 'AIの指摘に答えた', ' 💡=前に見落とした型を自分で出せた'),
     h('div', { class: 'tt-row' }, cycles.map((c, ci) => {
       let n = 0;
-      const delay = () => `animation-delay:${ci * 1.2 + (n++) * 0.18}s`;
+      const start = ci * 1.2;
+      const delay = () => `animation-delay:${start + (n++) * STEP}s`;
+      const vine = (row) => fork(start + row * 2 * STEP - 0.35);
+      const top = start + c.own.length * STEP;
       const tile = (o) => {
         const asked = c.items.find((i) => i.ownId === o.id);
         const answered = o.phase === 'hint';
@@ -545,11 +550,11 @@ function tileTrees(cycles, lenses = {}) {
       const rows = pairs(c.own).map((row) => h('div', { class: 'tt-pair' }, row.map(tile)));
       return h('div', { class: 'tt-tree' },
         h('div', { class: 'tt-head' }, `${ci + 1}周目`, h('span', { class: 'muted' }, ` ${day(c.createdAt)}`)),
-        h('div', { class: 'tt-apple', style: `animation-delay:${ci * 1.2 + c.own.length * 0.18 + 0.2}s` }, '🍏', h('small', {}, `自分で見つけた ${c.own.filter((o) => o.phase !== 'hint').length}／AIの指摘に答えた ${c.own.filter((o) => o.phase === 'hint').length}`)),
-        buds.length ? h('div', { class: 'tt-buds', style: `animation-delay:${ci * 1.2 + c.own.length * 0.18 + 0.5}s` },
+        h('div', { class: 'tt-apple', style: `animation-delay:${top + 0.2}s` }, '🍏', h('small', {}, `自分で見つけた ${c.own.filter((o) => o.phase !== 'hint').length}／AIの指摘に答えた ${c.own.filter((o) => o.phase === 'hint').length}`)),
+        buds.length ? h('div', { class: 'tt-buds', style: `animation-delay:${top + 0.5}s` },
           h('small', {}, `🌱 まだ芽（めんだこだけが見た所 ${buds.length}）`),
-          buds.map((i) => h('div', { class: 'tt-bud', title: i.item }, icon(i.lens), h('span', {}, i.item)))) : null,
-        h('div', { class: 'tt-stack' }, rows.flatMap((r, i) => (i ? [fork(), r] : [r])).reverse(), fork()),
+          buds.map((i, k) => h('div', { class: 'tt-bud', title: i.item, style: `animation-delay:${top + 0.7 + k * 0.12}s` }, icon(i.lens), h('span', {}, i.item)))) : null,
+        h('div', { class: 'tt-stack' }, rows.flatMap((r, i) => (i ? [vine(i), r] : [r])).reverse(), vine(0)),
         h('div', { class: 'tt-root' }, c.project));
     })));
 }
