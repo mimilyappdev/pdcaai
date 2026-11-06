@@ -496,8 +496,10 @@ function cycleBars(stats) {
 }
 
 // 伸びを見る: 周回ごとのタイルの木を横に並べる。タイルは本人の言葉、葉の色は 緑=自分で見つけた／オレンジ=AIの指摘に答えた。
-// 下の根元（題材）から上へ、1枚ずつ葉が開く。AIだけの項目はタイルにせず数で添える。
-function tileTrees(cycles) {
+// 下の根元（題材）から上へ、1枚ずつ葉が開く。答えたタイルには、問いを出しためんだこの吹き出しを付ける。
+// AIだけの項目はタイルにせず、木のてっぺんに薄い「芽」として出す（次に考える所）。
+function tileTrees(cycles, lenses = {}) {
+  const icon = (lens) => h('img', { src: `/img/mendako-${lens}.png`, alt: '' });
   const pairs = (list) => list.reduce((rows, x, i) => (i % 2 ? rows.at(-1).push(x) : rows.push([x]), rows), []);
   const fork = () => svg('svg', { class: 'tt-fork', viewBox: '0 0 100 24', preserveAspectRatio: 'none', 'aria-hidden': 'true' },
     svg('path', { d: 'M50 24 C50 10 25 14 25 0' }), svg('path', { d: 'M50 24 C50 10 75 14 75 0' }));
@@ -507,16 +509,24 @@ function tileTrees(cycles) {
     h('div', { class: 'tt-row' }, cycles.map((c, ci) => {
       let n = 0;
       const delay = () => `animation-delay:${ci * 1.2 + (n++) * 0.18}s`;
-      const tile = (o) => h('div', { class: `tt-tile ${o.phase === 'hint' ? 'answered' : 'self'}`, title: o.text, style: delay() },
-        h('span', { class: 'tt-leaf' }), h('div', { class: 'tt-sq' }, o.recalls ? '💡 ' : '', o.text));
-      const ai = c.items.filter((i) => i.status === 'ai').length;
+      const tile = (o) => {
+        const asked = c.items.find((i) => i.ownId === o.id);
+        const answered = o.phase === 'hint';
+        return h('div', { class: `tt-tile ${answered ? 'answered' : 'self'}`, title: o.text, style: delay() },
+          asked && answered ? h('div', { class: 'tt-ask', title: asked.item }, icon(asked.lens), h('span', {}, h('b', {}, lenses[asked.lens] ?? ''), asked.item)) : null,
+          h('span', { class: 'tt-leaf' }), h('div', { class: 'tt-sq' }, o.recalls ? '💡 ' : '', o.text),
+          asked && !answered ? h('div', { class: 'tt-same', title: asked.item }, icon(asked.lens), `${lenses[asked.lens] ?? 'めんだこ'}も同じ所を見ていた`) : null);
+      };
+      const buds = c.items.filter((i) => i.status === 'ai');
       const rows = pairs(c.own).map((row) => h('div', { class: 'tt-pair' }, row.map(tile)));
       return h('div', { class: 'tt-tree' },
         h('div', { class: 'tt-head' }, `${ci + 1}周目`, h('span', { class: 'muted' }, ` ${day(c.createdAt)}`)),
         h('div', { class: 'tt-apple', style: `animation-delay:${ci * 1.2 + c.own.length * 0.18 + 0.2}s` }, '🍏', h('small', {}, `自分で見つけた ${c.own.filter((o) => o.phase !== 'hint').length}／AIの指摘に答えた ${c.own.filter((o) => o.phase === 'hint').length}`)),
+        buds.length ? h('div', { class: 'tt-buds', style: `animation-delay:${ci * 1.2 + c.own.length * 0.18 + 0.5}s` },
+          h('small', {}, `🌱 まだ芽（めんだこだけが見た所 ${buds.length}）`),
+          buds.map((i) => h('div', { class: 'tt-bud', title: i.item }, icon(i.lens), h('span', {}, i.item)))) : null,
         h('div', { class: 'tt-stack' }, rows.flatMap((r, i) => (i ? [fork(), r] : [r])).reverse(), fork()),
-        h('div', { class: 'tt-root' }, c.project),
-        ai ? h('p', { class: 'muted tt-ai' }, `AIだけが出した ${ai}`) : null);
+        h('div', { class: 'tt-root' }, c.project));
     })));
 }
 
@@ -530,7 +540,7 @@ async function notebookView() {
     h('h1', {}, '伸びを見る'),
     h('p', { class: 'lead' }, '自分で先に出した検討事項と、AI社員だけが出したものの記録です。自分で出せるようになった観点から、ヒント（補助輪）が外れていきます。'),
     cycles.length ? null : h('p', { class: 'muted' }, 'まだ記録はありません。Claude Code で pdcaai スキルを使うと、ここに積まれます。'),
-    cycles.length ? tileTrees(cycles) : null,
+    cycles.length ? tileTrees(cycles, lenses) : null,
     stats.length ? cycleBars(stats) : null,
     stats.length ? growthTable(stats, lenses, reunions) : null,
     stats.length ? h('section', { class: 'card' },

@@ -265,7 +265,16 @@ main.wide { max-width: 1240px; }
 .tt-tile.answered { --leaf: #B84E26; --leaf-bg: #F6DCCB; }
 .tt-sq { position: relative; background: #fff; border: 1px solid #cfc8b8; border-radius: 8px; padding: 6px 8px; font-size: 12px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; box-shadow: 0 6px 14px -10px #0006; }
 .tt-root { align-self: center; background: #20241f; color: #fff; border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 700; max-width: 90%; text-align: center; }
-.tt-ai { text-align: center; font-size: 12px; margin: 6px 0 0; }
+.tt-ask { position: relative; z-index: 1; display: flex; align-items: flex-start; gap: 4px; margin: -4px -6px 10px; padding: 4px 6px; background: #fff; border: 1.5px solid var(--accent); border-radius: 10px; font-size: 11px; line-height: 1.35; color: var(--accent-dark); }
+.tt-ask::after { content: ''; position: absolute; left: 22px; bottom: -7px; width: 10px; height: 10px; background: #fff; border: solid var(--accent); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+.tt-ask img, .tt-same img, .tt-bud img { width: 26px; height: 18px; object-fit: contain; flex: none; }
+.tt-ask span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tt-ask b, .tt-bud b { margin-right: 4px; }
+.tt-same { position: relative; display: flex; align-items: center; gap: 2px; margin-top: 8px; font-size: 10.5px; color: #00704f; }
+.tt-buds { display: flex; flex-direction: column; gap: 3px; margin: 0 6px 20px; padding: 6px 8px; border: 1.5px dashed #b9c9a8; border-radius: 10px; background: #fbfdf7; opacity: .75; animation: pop .45s ease-out both; }
+.tt-buds small { font-size: 11px; color: var(--sub); }
+.tt-bud { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--sub); }
+.tt-bud span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.9); } to { opacity: 1; transform: none; } }
 @keyframes unfurl { from { transform: scale(0) rotate(-35deg); } to { transform: rotate(-6deg); } }
-@media (prefers-reduced-motion: reduce) { .tt-tile, .tt-leaf, .tt-apple { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .tt-tile, .tt-leaf, .tt-apple, .tt-buds { animation: none; } }
