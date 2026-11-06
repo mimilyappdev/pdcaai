@@ -45,7 +45,7 @@
   .tile.own { background: #e3f0e8; color: var(--ok); }
   .mendakos { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; margin: 10px 0; }
   .mendako { text-align: center; font-size: 13px; width: 120px; }
-  .mendako svg { display: block; width: 72px; height: 64px; margin: 0 auto; }
+  .mendako img { display: block; width: 96px; height: 96px; margin: 0 auto; object-fit: contain; }
   .mendako b { display: block; }
   .mendako small { display: block; color: var(--sub); }
   .q { border-left: 4px solid var(--mendako); padding: 6px 12px; margin: 10px 0; background: #fff; border-radius: 4px; }
@@ -252,14 +252,9 @@
   <button id="next">次へ ▶</button>
 </div>
 <script>
-const MENDAKO = (label, role) => `<div class="mendako"><svg viewBox="0 0 72 64" aria-hidden="true">
-  <path d="M8 40 Q8 8 36 8 Q64 8 64 40 Q58 36 52 44 Q46 36 40 44 Q36 38 32 44 Q26 36 20 44 Q14 36 8 40Z" fill="var(--mendako)"/>
-  <ellipse cx="14" cy="14" rx="6" ry="4" fill="var(--mendako)" transform="rotate(-30 14 14)"/>
-  <ellipse cx="58" cy="14" rx="6" ry="4" fill="var(--mendako)" transform="rotate(30 58 14)"/>
-  <circle cx="27" cy="26" r="3" fill="#20241f"/><circle cx="45" cy="26" r="3" fill="#20241f"/></svg>
-  <b>${label}</b><small>${role}</small></div>`;
-const CREW = [['新入社員', '初めて触る人が迷う所'], ['法務・リスク管理', '壊れる・揉める所'], ['財務', 'お金と続け方'], ['ユーザー', '使う人の困りごと']];
-for (const id of ['crew', 'crew2']) document.getElementById(id).innerHTML = CREW.map(([a, b]) => MENDAKO(a, b)).join('');
+const MENDAKO = (img, label, role) => `<div class="mendako"><img src="img/mendako-${img}.png" alt=""><b>${label}</b><small>${role}</small></div>`;
+const CREW = [['first-timer', '新入社員', '初めて触る人が迷う所'], ['breaker', '法務・リスク管理', '壊れる・揉める所'], ['money-ops', '財務', 'お金と続け方'], ['misreading', 'ユーザー', '使う人の困りごと']];
+for (const id of ['crew', 'crew2']) document.getElementById(id).innerHTML = CREW.map((c) => MENDAKO(...c)).join('');
 
 const BARS = [['AIだけのマニュアル', 5, 'base'], ['カード1回目', 4], ['2回目', 3], ['3回目', 2], ['4回目', 2], ['5回目', 2], ['6回目', 0]];
 const bars = document.getElementById('bars');
