@@ -531,6 +531,7 @@ function tileTrees(cycles, lenses = {}) {
   const STEP = 0.3;
   return h('section', { class: 'card' },
     h('h2', {}, '思考の木（周回ごと）'),
+    h('p', { class: 'tt-lead' }, 'この木は、①洗い出すで、AIの答えを見る前にあなたが書いたことの記録です。マニュアルではありません。'),
     h('p', { class: 'bar-key' }, h('i', { class: 'c-self' }), '自分で見つけた', h('i', { class: 'c-answered' }), 'AIの指摘に答えた', ' 💡=前に見落とした型を自分で出せた'),
     h('div', { class: 'tt-row' }, cycles.map((c, ci) => {
       let n = 0;
@@ -552,10 +553,11 @@ function tileTrees(cycles, lenses = {}) {
         h('div', { class: 'tt-head' }, `${ci + 1}周目`, h('span', { class: 'muted' }, ` ${day(c.createdAt)}`)),
         h('div', { class: 'tt-apple', style: `animation-delay:${top + 0.2}s` }, '🍏', h('small', {}, `自分で見つけた ${c.own.filter((o) => o.phase !== 'hint').length}／AIの指摘に答えた ${c.own.filter((o) => o.phase === 'hint').length}`)),
         buds.length ? h('div', { class: 'tt-buds', style: `animation-delay:${top + 0.5}s` },
-          h('small', {}, `🌱 まだ芽（めんだこだけが見た所 ${buds.length}）`),
+          h('small', {}, h('b', {}, `🌱 芽＝めんだこだけが見た所 ${buds.length}`), '（あなたはまだ出せていない。次に考える所）'),
           buds.map((i, k) => h('div', { class: 'tt-bud', title: i.item, style: `animation-delay:${top + 0.7 + k * 0.12}s` }, icon(i.lens), h('span', {}, i.item)))) : null,
+        h('p', { class: 'tt-zone' }, h('b', {}, '🍃 葉＝あなたが先に考えたこと'), `（1枚＝1行、${c.own.length}枚）`),
         h('div', { class: 'tt-stack' }, rows.flatMap((r, i) => (i ? [vine(i), r] : [r])).reverse(), vine(0)),
-        h('div', { class: 'tt-root' }, c.project));
+        h('div', { class: 'tt-root' }, h('small', {}, '根＝題材'), c.project));
     })));
 }
 
