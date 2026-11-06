@@ -11,7 +11,7 @@ import { buildServer } from '../src/server.js';
 test('カード版は4人の洗い出しを本人の答えと突き合わせ、カードで回した記録として残す', async () => {
   const provider = mockProvider();
   const book = { cycles: [] };
-  const input = { project: 'オンラインのイベント', summary: '', confidenceBefore: 70 };
+  const input = { project: 'カフェの予約', summary: '', confidenceBefore: 70 };
   const pending = startStretch(provider, book, input);
   const cycle = await finishStretch(provider, book, { ...input, own: ['サーバーの費用が気になる', '名前を決めたい'], pending });
   assert.equal(cycle.mode, 'card');
@@ -32,7 +32,7 @@ test('カードをめくる前は、AI社員の結果をブラウザへ送らな
   const base = `http://127.0.0.1:${server.address().port}/api/stretch`;
   const post = (path, body) => fetch(base + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then((r) => r.json());
   try {
-    const st = await post('', { project: 'イベント', confidenceBefore: 60 });
+    const st = await post('', { project: 'カフェの予約', confidenceBefore: 60 });
     assert.equal(st.cards.length, 4);
     assert.equal(JSON.stringify(st).includes('item'), false);
     const out = await post(`/${st.id}/answer`, { own: ['最初の画面が分かりにくい'] });
