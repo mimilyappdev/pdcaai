@@ -21,10 +21,10 @@ function userLines(user) {
 
 // カード版のストレッチャー用。AI社員の項目と突き合わせを、固定の内容で返す。
 const STRETCH = {
-  '初めて触る人': { item: '最初の画面で何をすればいいか書かれていない', why: '初めての人は最初の一手で止まりやすい。', check: '初見の人に画面だけ見せて、最初の操作までの時間を測る。' },
+  '初めて引き継ぐ': { item: '最初の画面で何をすればいいか書かれていない', why: '初めての人は最初の一手で止まりやすい。', check: '初見の人に画面だけ見せて、最初の操作までの時間を測る。' },
   '壊れる': { item: '途中で閉じると入力が消える', why: '長い入力ほど、消えたときの損が大きい。', check: '入力の途中で閉じて開き直し、残っているか確かめる。' },
   '運営担当': { item: '使う人が増えたときの費用が見積もられていない', why: '無料のまま増えると、費用だけがかさむ。', check: '10人と100人のときの月額を書き出す。' },
-  '読み違え': { item: '「完成」の基準が人によって違う', why: '受け取った人が、どこまでやれば終わりか判断できない。', check: '完成の条件を3行で書き、別の人に読んでもらう。' },
+  '受け取る側': { item: '「完成」と言われても、受け取った人には何が終わったか分からない', why: '受け取る側は、何をすればいいか判断できない。', check: '完成の条件を3行で書き、別の人に読んでもらう。' },
 };
 
 function mockStretch(keys, system, user) {
@@ -42,8 +42,28 @@ function mockStretch(keys, system, user) {
   return { recalls: [] };
 }
 
+// 後任AIテスト用。仕事ごとに見るカードの見出しを決めておき、その欄が空なら「止まった」にする。
+const JOBS = [
+  ['お客さんから「いつまでですか？」と聞かれた', 'いつもの流れ'],
+  ['届いた品物が壊れていたと連絡が来た', '困ったら（問い合わせ・お金）'],
+  ['提出済みのデータを差し替えたいと言われた', '自分で決めていいこと／必ず聞くこと'],
+];
+
+function mockSuccessor(user) {
+  const section = (heading) => user.match(new RegExp(`## ${heading.replace(/[()（）／]/g, '.')}\\n(.*)`))?.[1] ?? '';
+  return {
+    results: JOBS.map(([job, heading]) => {
+      const line = section(heading);
+      const ok = line && line !== '（空いています）';
+      return { job, result: ok ? 'できた' : '止まった', line: ok ? line : `${heading}（空いています）`, why: ok ? 'カードの行で判断できた。' : 'この欄が空いていて判断できない。', missing: ok ? '' : `「${heading}」に1行` };
+    }),
+  };
+}
+
 export function mockResponse({ schema, system = '', user }) {
   const keys = Object.keys(schema.properties);
+  if (keys.includes('jobs')) return { jobs: JOBS.map(([job]) => job) };
+  if (keys.includes('results')) return mockSuccessor(user);
   if (['items', 'quotes', 'recalls'].some((k) => keys.includes(k))) return mockStretch(keys, system, user);
   const lines = userLines(user);
   if (keys.includes('reply')) {

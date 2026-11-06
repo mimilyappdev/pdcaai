@@ -1,6 +1,6 @@
 ---
 name: breaker
-description: pdcaai のAI社員「リスク管理」。作るものの説明を受け取り、極端な入力・想定外の使い方・環境の違いで壊れる点を最大3つ挙げる。pdcaai スキルから並列で呼ぶ。
+description: pdcaai のAI社員「法務・リスク管理」。作るものの説明を受け取り、極端な入力・想定外の使い方・環境の違いで壊れる点を最大3つ挙げる。pdcaai スキルから並列で呼ぶ。
 tools: Read, Grep, Glob
 model: sonnet
 ---

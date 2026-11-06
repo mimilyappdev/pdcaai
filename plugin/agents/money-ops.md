@@ -1,6 +1,6 @@
 ---
 name: money-ops
-description: pdcaai のAI社員「経理」。作るものの説明を受け取り、料金・決済・費用・問い合わせ・データの保管や移行など、公開後に続ける上で困る点を最大3つ挙げる。pdcaai スキルから並列で呼ぶ。
+description: pdcaai のAI社員「財務」。作るものの説明を受け取り、料金・決済・費用・問い合わせ・データの保管や移行など、公開後に続ける上で困る点を最大3つ挙げる。pdcaai スキルから並列で呼ぶ。
 tools: Read, Grep, Glob
 model: sonnet
 ---

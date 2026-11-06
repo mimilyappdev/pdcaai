@@ -8,9 +8,9 @@ import { fileURLToPath } from 'node:url';
 
 export const LENSES = {
   'first-timer': '新入社員',
-  breaker: 'リスク管理',
-  'money-ops': '経理',
-  misreading: '確認係',
+  breaker: '法務・リスク管理',
+  'money-ops': '財務',
+  misreading: 'ユーザー',
 };
 
 const WINDOW = 3;
@@ -124,6 +124,8 @@ export function summarize(cycle) {
     confidenceAfter: cycle.confidenceAfter ?? null,
     mode: cycle.mode ?? 'skill',
     feel: cycle.feel ?? null,
+    // 後任AIテストで止まった仕事の数の推移。
+    stuck: cycle.handover?.tests.map((t) => t.stuck) ?? [],
   };
 }
 
@@ -234,6 +236,43 @@ export function manual(book, cycles = book.cycles.filter((c) => subject(c.projec
   return out.join('\n');
 }
 
+// 1枚の引継ぎカード。見出しは固定し、空いた欄はその担当のAI社員が指摘する。中身は本人の言葉だけ。
+export const HANDOVER = [
+  { key: 'purpose', heading: 'この仕事は何のため', lens: 'misreading', ask: '受け取った人は、何のための仕事だと思うかな？' },
+  { key: 'flow', heading: 'いつもの流れ', lens: 'first-timer', ask: '最初から最後まで、どの順番でやる？' },
+  { key: 'decide', heading: '自分で決めていいこと／必ず聞くこと', lens: 'misreading', ask: 'どこまで任せて、どこから相談してほしい？' },
+  { key: 'trouble', heading: '困ったら（問い合わせ・お金）', lens: 'money-ops', ask: '問い合わせや返金が来たら、誰がどうする？' },
+  { key: 'keep', heading: '触ってはいけないもの・見せないもの', lens: 'breaker', ask: '消えたり漏れたりしたら困るものは？' },
+  { key: 'tips', heading: '前任者のコツ', lens: 'first-timer', ask: 'やってみて分かった、書いておきたいことは？' },
+];
+
+export function applyHandover(book, input) {
+  const cycle = book.cycles.find((c) => c.id === input.id);
+  if (!cycle) throw new Error('この周回は見つかりません');
+  const handover = cycle.handover ?? { card: {}, jobs: [], tests: [] };
+  if (input.card) handover.card = Object.fromEntries(HANDOVER.map(({ key }) => [key, String(input.card[key] ?? '').trim().slice(0, 2000)]));
+  if (input.jobs) handover.jobs = input.jobs.slice(0, 5).map((j) => String(j).slice(0, 200));
+  if (input.test) handover.tests.push({
+    at: new Date().toISOString(),
+    stuck: input.test.filter((r) => r.result !== 'できた').length,
+    results: input.test.map((r) => ({ job: String(r.job ?? ''), result: r.result === 'できた' ? 'できた' : '止まった', line: String(r.line ?? ''), why: String(r.why ?? ''), missing: String(r.missing ?? '') })),
+  });
+  cycle.handover = handover;
+  return cycle;
+}
+
+export function handoverText(cycle) {
+  const card = cycle.handover?.card ?? {};
+  return [`# 引継ぎカード: ${cycle.project}`, '', ...HANDOVER.flatMap(({ key, heading }) => [`## ${heading}`, card[key] || '（空いています）', ''])].join('\n');
+}
+
+// 人間だけ帳。AI社員の誰も出さなかった本人の考え。AIでは補えない観点として、後任AIテストの仕事づくりに使う。
+export function humanOnly(book) {
+  return book.cycles.flatMap((c) => c.own
+    .filter((o) => !c.items.some((i) => i.ownId === o.id))
+    .map((o) => ({ text: o.text, project: c.project, cycleId: c.id })));
+}
+
 async function readInput(path) {
   if (!path) throw new Error('入力のJSONファイルを指定してください');
   return JSON.parse((await readFile(path, 'utf8')).replace(/^﻿/, ''));
@@ -268,7 +307,13 @@ async function main([command, arg]) {
     await writeFile(out, manual(book));
     return { manual: out };
   }
-  throw new Error('使い方: notebook.mjs hints | stats | record <file.json> | update <file.json> | manual [out.md]');
+  if (command === 'handover') {
+    const cycle = applyHandover(book, await readInput(arg));
+    await save(book, file);
+    return { id: cycle.id, stuck: summarize(cycle).stuck, card: handoverText(cycle) };
+  }
+  if (command === 'human') return { humanOnly: humanOnly(book) };
+  throw new Error('使い方: notebook.mjs hints | stats | record <file.json> | update <file.json> | manual [out.md] | handover <file.json> | human');
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {

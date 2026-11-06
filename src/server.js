@@ -7,11 +7,12 @@ import { chooseProvider } from './providers.js';
 import { JsonStore } from './store.js';
 import * as notebook from '../plugin/skills/pdcaai/scripts/notebook.mjs';
 import { CARDS, finishStretch, startStretch } from './stretch.js';
+import { makeJobs, successorTest } from './handover.js';
 import { randomUUID } from 'node:crypto';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const PUBLIC = join(ROOT, 'public');
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png' };
 const MAX_BODY = 200_000;
 
 function send(res, status, body) {
@@ -79,14 +80,29 @@ async function stretchRoute(provider, pathname, body) {
   return { summary: notebook.summarize(cycle) };
 }
 
+// 引継ぎカードを保存し、後任AIテストを回す。仕事は1回目に決めて、書き足したあとも同じ仕事で試す。
+async function handoverRoute(provider, cycleId, body) {
+  const book = await notebook.load();
+  const cycle = book.cycles.find((c) => c.id === cycleId);
+  if (!cycle) throw new InputError('この周回は見つかりません');
+  notebook.applyHandover(book, { id: cycleId, card: body.card ?? {} });
+  if (!Object.values(cycle.handover.card).some(Boolean)) throw new InputError('カードに1行以上書いてください');
+  if (!cycle.handover.jobs.length) notebook.applyHandover(book, { id: cycleId, jobs: await makeJobs(provider, cycle, book) });
+  notebook.applyHandover(book, { id: cycleId, test: await successorTest(provider, cycle, cycle.handover.jobs) });
+  await notebook.save(book);
+  return { handover: cycle.handover };
+}
+
 async function route(engine, req, res, providerName) {
   const { pathname } = new URL(req.url, 'http://localhost');
   if (req.method === 'GET' && pathname === '/api/meta') return send(res, 200, { provider: providerName });
   if (req.method === 'GET' && pathname === '/api/ledger') return send(res, 200, await engine.ledger());
   if (req.method === 'GET' && pathname === '/api/notebook') {
     const book = await notebook.load();
-    return send(res, 200, { cycles: book.cycles, stats: notebook.stats(book), hints: notebook.hints(book), lenses: notebook.LENSES });
+    return send(res, 200, { cycles: book.cycles, stats: notebook.stats(book), hints: notebook.hints(book), lenses: notebook.LENSES, slots: notebook.HANDOVER, humanOnly: notebook.humanOnly(book) });
   }
+  const hm = pathname.match(/^\/api\/handover\/(c\d+)$/);
+  if (req.method === 'POST' && hm) return send(res, 200, await handoverRoute(engine.provider, hm[1], await readJson(req)));
   if (req.method === 'POST' && pathname.startsWith('/api/stretch')) return send(res, 200, await stretchRoute(engine.provider, pathname, await readJson(req)));
   const m = pathname.match(/^\/api\/sessions(?:\/([\w-]+)(?:\/([\w-]+)(?:\/(\w+))?)?)?$/);
   if (m) {

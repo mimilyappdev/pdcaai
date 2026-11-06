@@ -39,6 +39,17 @@ test('カードをめくる前は、AI社員の結果をブラウザへ送らな
     assert.equal(out.summary.self, 1);
     const done = await post(`/${st.id}/feel`, { feel: 2, confidenceAfter: 65 });
     assert.deepEqual([done.summary.feel, done.summary.mode], [2, 'card']);
+
+    // 引継ぎカードを書き足すたびに、同じ仕事で後任AIテストをやり直し、止まった数が減っていく。
+    const ho = (card) => fetch(base.replace('stretch', `handover/${out.cycle.id}`), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ card }) }).then((r) => r.json());
+    const first = await ho({ flow: '申込 → 入稿 → 開始' });
+    assert.equal(first.handover.tests[0].stuck, 2);
+    const second = await ho({ flow: '申込 → 入稿 → 開始', trouble: '運営が受けて製造元へ', decide: '提出後の変更は不可' });
+    assert.deepEqual(second.handover.tests.map((t) => t.stuck), [2, 0]);
+    assert.deepEqual(second.handover.jobs, first.handover.jobs);
+    const nb = await fetch(base.replace('stretch', 'notebook')).then((r) => r.json());
+    assert.deepEqual(nb.stats.at(-1).stuck, [2, 0]);
+    assert.equal((await ho({})).error, 'カードに1行以上書いてください');
   } finally {
     server.close();
     delete process.env.PDCAAI_NOTEBOOK;

@@ -10,10 +10,10 @@ export const LENS_MODEL = 'claude-sonnet-5-5';
 
 // カードの表に出す、各AI社員の問いかけ。答えは見せずに、考える入口だけを渡す。
 export const CARDS = {
-  'first-timer': '初めての人は、どこで止まりそう？',
+  'first-timer': '初めて引き継ぐ人は、どこで止まりそう？',
   breaker: 'どこが壊れる・混ざる・消えそう？',
   'money-ops': 'お金と、続けるための手間は大丈夫？',
-  misreading: '受け取った人が読み違えそうなところは？',
+  misreading: '受け取る人（お客さん）は、どこで困りそう？',
 };
 
 export const ITEMS_SCHEMA = {

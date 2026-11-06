@@ -28,6 +28,522 @@
 <h1>pdcaai 検討ページ</h1>
 <p class="lead">見た目や構成の検討を、新しいものから上に積み上げます。古い検討は消さずに残します。</p>
 
+<article id="2026-11-06-manual">
+<p class="date">2026-11-06（2つ目）</p>
+<h2>マニュアルを「後任が止まった質問」から作り、行ごとに出どころと確認済みかを付ける</h2>
+
+<h3>何を変えたか</h3>
+<ul>
+  <li>AIが作るマニュアルにありがちな「概要／手順／注意点」の長い箇条書きをやめた。3つの形を比べた。</li>
+  <li>推奨はC「判断カード」。後任AIテストで止まった質問を、そのまま見出しにする。答えは本人の言葉で書き、行ごとに「本人／AI補足」「後任テスト通過」「確認した日」を付ける。</li>
+  <li>先頭には、1日の流れを1行の図で置く。細かい手順は、困ったときに開くカードに分ける。</li>
+</ul>
+<h3>修正理由</h3>
+<ul>
+  <li>AIのマニュアルが毎回同じに見えるのは、「書けること」から書くから。後任が実際に止まった所から書けば、その仕事にしかない中身になる。</li>
+  <li>行ごとの出どころと確認日があると、どこが本人の判断で、どこが古いかが一目で分かる。周期的な聞き返しにもそのまま使える。</li>
+</ul>
+
+<h3>3つの形の比較</h3>
+<div class="scroll"><table>
+<tr><th></th><th>A 手順書（いつものAI型）</th><th>B 時系列（1日の流れ）</th><th><b>C 判断カード（推奨）</b></th></tr>
+<tr><td>見出し</td><td>概要・手順・注意点</td><td>朝・昼・夕・月末</td><td>後任が止まった質問</td></tr>
+<tr><td>強い所</td><td>網羅的に見える</td><td>初日に流れがつかめる</td><td>困った瞬間に引ける。その仕事にしかない中身になる</td></tr>
+<tr><td>弱い所</td><td>どれも同じ顔。どこが大事か分からない</td><td>例外が埋もれる</td><td>全体像が弱い → 先頭に流れを1行置いて補う</td></tr>
+<tr><td>作り方</td><td>AIが要約</td><td>本人が順に話す</td><td>後任AIテスト → 止まった質問 → 本人が1行</td></tr>
+</table></div>
+
+<h3>見本（C 判断カード）※題材は架空の「請求書の未払い対応」</h3>
+<style>
+  .man { background:#FBF8F1; border:1px solid var(--line); border-radius:12px; padding:16px; }
+  .man .flow { display:flex; flex-wrap:wrap; gap:6px; align-items:center; font-size:14px; margin-bottom:12px; }
+  .man .flow span { background:#2E3460; color:#fff; border-radius:6px; padding:3px 10px; }
+  .man details { background:#fff; border:1px solid var(--line); border-radius:8px; padding:8px 12px; margin-bottom:8px; }
+  .man summary { cursor:pointer; font-weight:600; }
+  .man .row { display:flex; gap:8px; align-items:baseline; margin:6px 0; font-size:14px; }
+  .man .src { flex:none; font-size:12px; border-radius:4px; padding:1px 6px; }
+  .man .me { background:#E7EEF8; color:#2E3460; }
+  .man .ai { background:#FFF0E2; color:#9A4A0A; }
+  .man .meta { font-size:12px; color:var(--sub); margin-top:6px; }
+  .man .ok { color:#2E6B3A; } .man .ng { color:#B5531A; }
+</style>
+<div class="man">
+  <div class="flow"><b>いつもの流れ:</b><span>月末 請求書を送る</span>→<span>期日 入金を見る</span>→<span>3日後 1回目の連絡</span>→<span>14日後 上の人に相談</span></div>
+  <details open>
+    <summary>Q. 期日を過ぎても入金がない。まず何をする？</summary>
+    <div class="row"><span class="src me">本人</span>まず入金日の行き違いを疑う。銀行の明細をもう一度見てから、やわらかい文面で1回目の連絡。</div>
+    <div class="row"><span class="src ai">AI補足</span>連絡の文面ひな形は「共有フォルダ/文面」にある。<i>（本人が残すか消すか決める）</i></div>
+    <p class="meta"><span class="ok">● 後任テスト通過</span>（2回目）・確認 2026-11-06・出した人: 引き継ぎ相手</p>
+  </details>
+  <details>
+    <summary>Q. 「来月まとめて払う」と言われた。受けていい？</summary>
+    <div class="row"><span class="src me">本人</span>1か月までは自分で受けてよい。それより長いときと、2回目のときは必ず相談。</div>
+    <p class="meta"><span class="ok">● 後任テスト通過</span>・確認 2026-11-06・出した人: 財務</p>
+  </details>
+  <details>
+    <summary>Q. 顧客の担当者が変わった。誰に連絡する？</summary>
+    <div class="row"><span class="src me">本人</span>（空いています）</div>
+    <p class="meta"><span class="ng">● 後任が止まった</span>・出した人: 新入社員 → 聞き返しリストへ</p>
+  </details>
+</div>
+</article>
+
+<article id="2026-11-06-asks">
+<p class="date">2026-11-06</p>
+<h2>「いつもの指示」をボタンにして、押す前に自分の予想を1行書く</h2>
+
+<h3>何を変えたか</h3>
+<ul>
+  <li>作者がAIにいつも出している指示（競合調査・抜け漏れ出し・勝算を聞く・監査・要約）を、5つのボタンにした。</li>
+  <li>ボタンを押すと、AIに頼む前に「自分の予想」を1行書く欄が出る。書くまでは「AIに頼む」が押せない。</li>
+  <li>結果は「自分の予想」と「AIの答え」を並べる。AIだけが出した点は観点帳に積み、次はヒントになる。</li>
+</ul>
+<h3>修正理由</h3>
+<ul>
+  <li>会話記録を数えると、競合調査・抜け漏れ出し・勝算を聞く・監査は中身をAIに任せる形になりやすかった。一方で価格や法務は、作者が先に数字や仮説を置いてから検算させていて、伸びていた。</li>
+  <li>「先に1行」を挟むだけで、いつもの指示を楽に呼べることと、人間が先に考えることを両立できる。</li>
+</ul>
+
+<style>
+  .ask-demo { background:#FBF8F1; border:1px solid var(--line); border-radius:12px; padding:16px; max-width:520px; }
+  .ask-demo .btns { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  .ask-demo button { font:inherit; border:1px solid #2E3460; background:#fff; color:#2E3460; border-radius:999px; padding:6px 14px; cursor:pointer; }
+  .ask-demo button[aria-pressed="true"] { background:#2E3460; color:#fff; }
+  .ask-demo .go { background:#C99A2E; border-color:#C99A2E; color:#fff; border-radius:8px; padding:8px 18px; }
+  .ask-demo .go:disabled { opacity:.4; cursor:not-allowed; }
+  .ask-demo textarea { width:100%; box-sizing:border-box; font:inherit; padding:8px; border:1px solid var(--line); border-radius:8px; min-height:56px; }
+  .ask-demo .cols { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; font-size:14px; }
+  .ask-demo .cols div { background:#fff; border:1px solid var(--line); border-radius:8px; padding:8px; }
+  .ask-demo .only-ai { color:#B5531A; }
+</style>
+<div class="ask-demo" id="askDemo">
+  <div class="btns">
+    <button data-k="competitor">競合を調べて</button>
+    <button data-k="gaps">抜け漏れを出して</button>
+    <button data-k="odds">勝算は？</button>
+    <button data-k="audit">監査して</button>
+    <button data-k="summary">引継ぎ文にまとめて</button>
+  </div>
+  <label for="askGuess" id="askLabel">ボタンを選んでください</label>
+  <textarea id="askGuess" placeholder="自分の予想を1行"></textarea>
+  <p><button class="go" id="askGo" disabled>AIに頼む</button></p>
+  <div class="cols" id="askCols" hidden>
+    <div><b>自分の予想</b><p id="askMine"></p></div>
+    <div><b>AIの答え（見本）</b><ul id="askAi"></ul></div>
+  </div>
+</div>
+<script>
+(() => {
+  // 見本用の固定の答え。題材は架空の「カフェのテイクアウト予約」
+  const Q = {
+    competitor: ['先に、競合だと思う店やサービスを1つ書こう', ['近所の店の電話予約', '大手の注文アプリ', '予約なしで並ぶ']],
+    gaps: ['先に、自分が一番心配な点を1つ書こう', ['受け取りに来ない人への対応', '売り切れの知らせ方', '支払いの返金']],
+    odds: ['先に、うまくいく確率と理由を1行で', ['昼の混雑で待ちたくない人は多い', '手数料で利益が薄い', 'リピートの仕組みがない']],
+    audit: ['先に、自分で一番弱いと思う所を1つ', ['料金の根拠が書かれていない', '個人情報の保管期間が未定', '失敗したときの撤退基準がない']],
+    summary: ['先に、後任に一番伝えたいことを1行で', ['毎朝の在庫確認', '受け取り忘れの連絡ルール', '返金を決める人']],
+  };
+  const root = document.getElementById('askDemo');
+  const guess = document.getElementById('askGuess');
+  const go = document.getElementById('askGo');
+  let key = null;
+  const sync = () => { go.disabled = !key || !guess.value.trim(); };
+  root.querySelectorAll('.btns button').forEach((b) => b.addEventListener('click', () => {
+    key = b.dataset.k;
+    root.querySelectorAll('.btns button').forEach((x) => x.setAttribute('aria-pressed', x === b));
+    document.getElementById('askLabel').textContent = Q[key][0];
+    document.getElementById('askCols').hidden = true;
+    sync();
+  }));
+  guess.addEventListener('input', sync);
+  go.addEventListener('click', () => {
+    const mine = guess.value.trim();
+    document.getElementById('askMine').textContent = mine;
+    const ul = document.getElementById('askAi');
+    ul.replaceChildren(...Q[key][1].map((t) => {
+      const li = document.createElement('li');
+      const hit = mine.includes(t.slice(0, 2));
+      li.textContent = hit ? t : `${t}（AIだけ → 観点帳へ）`;
+      if (!hit) li.className = 'only-ai';
+      return li;
+    }));
+    document.getElementById('askCols').hidden = false;
+  });
+})();
+</script>
+</article>
+
+<article id="2026-11-05-app-look">
+<p class="date">2026-11-05（3つ目）</p>
+<h2>画面全体を、ラクリプ・〆スケと同じ「分かりやすい作り」にそろえる</h2>
+
+<h3>何を変えたか</h3>
+<ul>
+  <li>作者が前に作ったラクリプ（EasyReply）と〆スケ（SchedulEX）の作りにそろえた: 紺のヘッダー（アプリ名＋小さなサブ名）、クリーム色の背景、白い角丸カードに見出し、押しやすい大きなボタン、主ボタンは黄土色、下に3つのタブ。</li>
+  <li>左の作業欄を、上から順に「事業内容 → めんだこたち → ASK → 回答」のカードに分けた。今どこを触ればいいかが、カードの順番で分かる。</li>
+  <li>右は「ツリー」カード（葉で包んだタイルの図）。スマホでは下のタブで「作業／ツリー／過去の検討」を切り替える。</li>
+  <li>めんだこは、今聞いている子だけ色が付き、ほかは薄くなる。</li>
+</ul>
+
+<h3>修正理由</h3>
+<p>作者から「昔作ったサイト（ラクリプ・〆スケ）の中身のように分かりやすくしたい」と指定があった。今の画面は説明文が長く、どこを押せばいいかが一目で分からない。</p>
+
+<style>
+  .ap { --g:#3A9E4F; --b:#2B6CB0; --r:#D64545; --y:#D9A400; --navy:#2E3460; --cream:#F5F1EB; --gold:#C99A2E; --line2:#d8dbe6; font-family: Meiryo, "Hiragino Sans", "Yu Gothic", sans-serif; background:var(--cream); border:1px solid var(--line); border-radius:14px; overflow:hidden; margin:16px 0; }
+  .ap-head { background:var(--navy); color:#fff; display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:3px solid var(--gold); }
+  .ap-head b { font-size:20px; letter-spacing:.5px; }
+  .ap-head small { display:block; font-size:10px; opacity:.75; margin-top:-3px; }
+  .ap-head .sp { flex:1; }
+  .ap-chip { background:#ffffff1f; border-radius:10px; padding:5px 10px; font-size:12px; }
+  .ap-chip.gold { background:var(--gold); }
+  .ap-body { display:grid; grid-template-columns:minmax(260px,1fr) 1.15fr; gap:12px; padding:12px; }
+  .ap-card { background:#fff; border:1px solid var(--line2); border-radius:14px; padding:12px 14px; margin-bottom:12px; }
+  .ap-card h4 { margin:0 0 8px; font-size:13px; color:#5a6075; font-weight:700; }
+  .ap-card .sub { font-size:12px; color:#8a90a3; margin:-4px 0 8px; }
+  .ap-input { border:1px solid var(--line2); border-radius:10px; padding:10px 12px; font-size:14px; background:#fbfbfd; }
+  .ap-mendako { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; text-align:center; font-size:11px; }
+  .ap-mendako div { border:1px solid var(--line2); border-radius:12px; padding:6px 2px; opacity:.45; }
+  .ap-mendako div.on { opacity:1; border:2px solid var(--gold); background:#fff8e6; }
+  .ap-mendako img { width:54px; height:auto; display:block; margin:0 auto 2px; }
+  .ap-ask { background:var(--navy); color:#fff; border-radius:12px; padding:10px 12px; font-size:14px; }
+  .ap-ask small { display:block; font-size:11px; opacity:.75; }
+  .ap-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+  .ap-btn { border-radius:12px; padding:11px; text-align:center; font-weight:700; font-size:14px; border:1px solid var(--line2); background:#eef0f5; color:#5a6075; }
+  .ap-btn.main { background:var(--gold); color:#fff; border-color:var(--gold); box-shadow:0 3px 0 #a07a1f; }
+  .ap-tree { position:relative; height:430px; background:radial-gradient(120% 90% at 50% 100%, #eef3e6, #fff 70%); border-radius:10px; overflow:hidden; }
+  .ap-tree .t5-node { animation:none; }
+  .ap-tabs { display:flex; background:var(--navy); color:#c9cde0; }
+  .ap-tabs div { flex:1; text-align:center; padding:8px 0 6px; font-size:11px; }
+  .ap-tabs div.on { color:#fff; font-weight:700; }
+  .ap-tabs span { display:block; font-size:20px; }
+  @media (max-width: 720px) { .ap-body { grid-template-columns:1fr; } .ap-hide-sp { display:none; } }
+</style>
+
+<div class="ap">
+  <div class="ap-head"><img src="../public/img/mendako-misreading.png" alt="" width="40"><div><b>PDCAI</b><small>AIだけじゃダメですか？！</small></div><span class="sp"></span><span class="ap-chip">過去の検討</span><span class="ap-chip gold">引継ぎカード</span></div>
+  <div class="ap-body">
+    <div>
+      <div class="ap-card"><h4>① 事業内容</h4><div class="ap-input">週1回のSNS告知を外部の人に任せる</div></div>
+      <div class="ap-card"><h4>② めんだこたち</h4><p class="sub">今聞いている子に色が付きます</p>
+        <div class="ap-mendako">
+          <div><img src="../public/img/mendako-first-timer.png" alt="">新入社員</div>
+          <div class="on"><img src="../public/img/mendako-money-ops.png" alt="">財務</div>
+          <div><img src="../public/img/mendako-breaker.png" alt="">法務・リスク</div>
+          <div><img src="../public/img/mendako-misreading.png" alt="">引き継ぎ相手</div>
+        </div>
+      </div>
+      <div class="ap-card"><h4>③ ASK</h4><div class="ap-ask"><small>財務から</small>返金してと言われたら、誰が決める？</div></div>
+      <div class="ap-card"><h4>④ 回答</h4><p class="sub">一言でOK。分からなければ「わからない」でも大丈夫です</p>
+        <div class="ap-input" style="min-height:52px;color:#8a90a3">ここに書いてEnter</div>
+        <div class="ap-btns"><div class="ap-btn">わからない</div><div class="ap-btn main">送る</div></div>
+      </div>
+    </div>
+    <div class="ap-card ap-hide-sp"><h4>ツリー（思考が見える）</h4>
+      <div class="ap-tree">
+        <svg width="100%" height="100%" style="position:absolute;inset:0" viewBox="0 0 400 430" preserveAspectRatio="none"><g fill="none" stroke="#9c8a6c" stroke-width="2.5"><path d="M200,385 C200,330 110,330 110,290"/><path d="M200,385 C200,330 290,330 290,290"/><path d="M290,230 C290,190 290,190 290,170"/><path d="M290,110 C290,80 290,80 290,72"/></g></svg>
+        <div class="t5-node root" style="left:50%;top:405px"><div class="t5-sq"><span class="txt">SNS告知を外部の人に任せる</span></div></div>
+        <div class="t5-node grown" style="left:27.5%;top:260px;--c:var(--g);--bg:#e3f2e4"><div class="t5-leaf"></div><div class="t5-sq"><span class="tag">広げる</span><span class="txt">絵文字は少なめに</span></div></div>
+        <div class="t5-node grown sel" style="left:72.5%;top:260px;--c:var(--r);--bg:#f9e3e3"><div class="t5-leaf"></div><div class="t5-sq"><span class="tag">疑う</span><span class="txt">毎週投稿って本当に必要？</span></div></div>
+        <div class="t5-node grown" style="left:72.5%;top:140px;--c:var(--y);--bg:#fbf1cf"><div class="t5-leaf"></div><div class="t5-sq"><span class="tag">決める</span><span class="txt">反応を見て頻度を決める</span></div></div>
+        <div class="t5-node apple" style="left:72.5%;top:40px;height:60px"><div class="t5-sq" style="padding-top:4px"><div style="font-size:20px;line-height:1">🍏</div><span class="txt">毎週投稿って本当に必要？</span></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="ap-tabs"><div class="on"><span>✍️</span>作業</div><div><span>🌿</span>ツリー</div><div><span>📚</span>過去の検討</div></div>
+</div>
+<p style="font-size:14px;color:#646a60">見本は止まった絵（動きは1つ上の見本）。スマホ幅ではツリーのカードが隠れ、下のタブで切り替える。めんだこは仮の絵。</p>
+
+<h3>未確認・次の検討</h3>
+<ul>
+  <li>ヘッダー右の「過去の検討」「引継ぎカード」ボタンの置き場所（ヘッダーか、下のタブか）。</li>
+  <li>色を〆スケの紺＋黄土色にそろえるか、pdcaai独自の色にするか。</li>
+</ul>
+</article>
+
+<article id="2026-11-05-tiles">
+<p class="date">2026-11-05（2つ目）</p>
+<h2>葉っぱで包んだタイルを枝でつなぎ、上へ伸ばす（動く見本）</h2>
+
+<h3>何を変えたか</h3>
+<ul>
+  <li>幹と枝の木をやめ、作者のスケッチどおり「葉の形の中に、考えた内容の四角いタイル」を枝でつなぐ図にした。根元のタイル（今回の題材）から上へ積み上がり、終わると一番上に🍏のタイルが出る。</li>
+  <li>書いてEnterを押すと、めんだこたちが判断している間は🌱芽のまま揺れ、判断が付くと葉が開いてタイルを包む。</li>
+  <li>葉の色は 広げる＝緑／深める＝青／疑う＝赤／決める＝黄。タイルをクリックすると、その上に次の芽が伸びる。</li>
+  <li>めんだこの質問（ASK）は、選んでいるタイルの横に吹き出しで出る。AIの出したものはタイルにしない。</li>
+</ul>
+
+<h3>修正理由</h3>
+<p>作者の3枚目のスケッチがタイルと線の図で、「木にこだわらなくていいのでオシャレに」「エンターしてAI達が判断したら芽が出て葉っぱになるアニメーション」とあった。その後「枝の内容は合ってる。四角いタイルは考えた内容で、その周りを葉っぱの形で（最初のツリーイメージのように）」と指定があり、タイルを葉で包む形にした。</p>
+
+<style>
+  .t5 { --g:#3A9E4F; --b:#2B6CB0; --r:#D64545; --y:#D9A400; position:relative; background:radial-gradient(120% 90% at 50% 100%, #eef3e6, #fbfaf6 70%); border:1px solid var(--line); border-radius:16px; padding:16px; margin:16px 0; }
+  .t5-stage { position:relative; min-height:440px; overflow:hidden; }
+  .t5-lines { position:absolute; left:0; top:0; pointer-events:none; overflow:visible; }
+  .t5-lines path { fill:none; stroke:#9c8a6c; stroke-width:2.5; stroke-linecap:round; stroke-dasharray:var(--len); stroke-dashoffset:var(--len); animation:t5draw .5s ease-out forwards; }
+  .t5-node { position:absolute; width:150px; height:84px; transform:translate(-50%,-50%); cursor:pointer; transition:left .45s ease, top .45s ease; animation:t5pop .35s ease-out both; }
+  .t5-leaf { position:absolute; inset:-16px -22px; overflow:hidden; border-radius:85% 0 85% 0; background:var(--bg, transparent); border:2px solid var(--c, transparent); transform:scale(0) rotate(-35deg); transition:transform .55s cubic-bezier(.3,1.5,.5,1); }
+  .t5-leaf::after { content:''; position:absolute; left:8%; bottom:8%; width:120%; height:2px; background:var(--c); opacity:.35; transform-origin:0 50%; transform:rotate(-22deg); }
+  .t5-node.grown .t5-leaf { transform:none; }
+  .t5-sq { position:absolute; inset:0; background:#fff; border:1.5px solid #cfc8b8; border-radius:8px; padding:7px 9px; font-size:12.5px; line-height:1.45; overflow:hidden; box-shadow:0 6px 14px -10px #0006; }
+  .t5-node.sel .t5-sq { outline:3px solid #F07F1A88; outline-offset:2px; }
+  .t5-sq .tag { display:block; font-size:10px; font-weight:700; color:var(--c); height:14px; }
+  .t5-node.wait .t5-sq { color:#999; }
+  .t5-sprout { position:absolute; left:-12px; top:-26px; width:28px; height:30px; transform-origin:50% 100%; animation:t5sprout .6s ease-out both, t5sway 1.2s ease-in-out .6s infinite; }
+  .t5-node.grown .t5-sprout { display:none; }
+  .t5-node.root { width:180px; height:46px; }
+  .t5-node.root .t5-sq { background:#20241f; color:#fff; border-color:#20241f; text-align:center; font-weight:700; padding-top:12px; }
+  .t5-node.apple .t5-sq { background:#fff4f0; border-color:#d94a3a; text-align:center; }
+  .t5-ask { position:absolute; transform:translate(0,-50%); display:flex; align-items:center; gap:6px; max-width:230px; font-size:12px; background:#fff0e2; border:1px solid #F07F1A; border-radius:12px; padding:4px 10px 4px 4px; animation:t5fade .3s ease-out both; z-index:2; }
+  .t5-ask img { width:38px; height:auto; }
+  .t5-form { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .t5-form input { flex:1; min-width:200px; padding:8px 10px; border:1px solid #b9b3a4; border-radius:10px; font-size:14px; }
+  .t5-form button { padding:8px 14px; border-radius:10px; border:0; background:#20241f; color:#fff; cursor:pointer; }
+  .t5-status { font-size:12px; color:var(--sub); min-height:1.4em; margin:6px 0 0; }
+  .t5-legend { font-size:12px; color:var(--sub); display:flex; gap:12px; flex-wrap:wrap; margin-bottom:6px; }
+  .t5-legend i { display:inline-block; width:12px; height:12px; border-radius:80% 0 80% 0; margin-right:4px; vertical-align:-1px; }
+  @keyframes t5pop { from { opacity:0; transform:translate(-50%,-35%) scale(.8); } }
+  @keyframes t5fade { from { opacity:0; } }
+  @keyframes t5sprout { from { transform:scale(0); } 60% { transform:scale(1.2); } }
+  @keyframes t5sway { 50% { transform:rotate(8deg); } }
+  @keyframes t5draw { to { stroke-dashoffset:0; } }
+  @media (prefers-reduced-motion: reduce) { .t5 *, .t5 *::after { animation:none !important; transition:none !important; } .t5-lines path { stroke-dashoffset:0; } }
+</style>
+
+<div class="t5" id="t5">
+  <div class="t5-legend"><span><i style="background:var(--g)"></i>広げる</span><span><i style="background:var(--b)"></i>深める</span><span><i style="background:var(--r)"></i>疑う</span><span><i style="background:var(--y)"></i>決める</span><span>🌱のまま＝つまった</span></div>
+  <div class="t5-stage" id="t5-stage"><svg class="t5-lines" id="t5-lines"></svg></div>
+  <form class="t5-form" id="t5-form"><input id="t5-in" placeholder="思いついたことを書いてEnter（選んだタイルの上に伸びます）" autocomplete="off"><button type="submit">Enter</button><button type="button" id="t5-end" style="background:#d94a3a">終わる🍏</button></form>
+  <p class="t5-status" id="t5-status" aria-live="polite"></p>
+</div>
+<p style="font-size:14px;color:#646a60">見本の判断はキーワードで決めている仮のもの（「？」や「本当」→疑う、「する」「決め」→決める、題材の上以外→深める、それ以外→広げる）。本番はめんだこ（AI）が判断する。</p>
+
+<script>
+(() => {
+  const C = { 広げる: ['var(--g)', '#e3f2e4'], 深める: ['var(--b)', '#e2ecf7'], 疑う: ['var(--r)', '#f9e3e3'], 決める: ['var(--y)', '#fbf1cf'] };
+  const ASKS = ['新入社員: 初めての人は、どこで止まりそう？', '財務: 返金してと言われたら、誰が決める？', '法務・リスク管理: 預かった情報は、いつ消す？', '引き継ぎ相手: 「OK」って、どこで待てばいい？'];
+  const IMG = ['first-timer', 'money-ops', 'breaker', 'misreading'];
+  const SPROUT = '<svg class="t5-sprout" viewBox="0 0 20 22"><path d="M10 21V10" stroke="#3A9E4F" stroke-width="2.2" stroke-linecap="round"/><path d="M10 11C5.5 11 3 8 3 5c4 0 7 2 7 6Zm0-1.5C10 5 13 2.5 17 2.5c0 4-3 7-7 7Z" fill="#6dbb5f"/></svg>';
+  const stage = document.getElementById('t5-stage'), lines = document.getElementById('t5-lines'), status = document.getElementById('t5-status');
+  const nodes = [{ id: 0, parent: null, text: 'SNS告知を外部の人に任せる', root: true }];
+  const el = {};
+  let sel = 0, asked = 0, apple = null;
+  const depth = (n) => (n.parent == null ? 0 : depth(nodes[n.parent]) + 1);
+  function layout() {
+    const order = []; const walk = (id) => { order.push(id); nodes.filter((n) => n.parent === id).forEach((n) => walk(n.id)); }; walk(0);
+    const rows = {}; order.forEach((id) => (rows[depth(nodes[id])] ??= []).push(id));
+    const top = Math.max(...Object.keys(rows).map(Number)) + (apple != null ? 1 : 0);
+    const W = stage.clientWidth, H = Math.max(440, (top + 1) * 124 + 50);
+    stage.style.height = H + 'px'; lines.setAttribute('width', W); lines.setAttribute('height', H);
+    const pos = {};
+    for (const [d, ids] of Object.entries(rows)) ids.forEach((id, i) => { pos[id] = { x: W * (i + 1) / (ids.length + 1), y: H - 40 - d * 124 }; });
+    if (apple != null) pos.apple = { x: pos[apple].x, y: H - 40 - top * 124 };
+    return pos;
+  }
+  function grow(n) {
+    const t = el[n.id]; const [c, bg] = C[n.kind];
+    t.style.setProperty('--c', c); t.style.setProperty('--bg', bg);
+    t.querySelector('.tag').textContent = n.kind;
+    t.classList.remove('wait'); t.classList.add('grown');
+  }
+  function node(n, cls, html) {
+    const t = document.createElement('div'); t.className = `t5-node ${cls}`; t.innerHTML = html;
+    t.querySelector('.txt').textContent = n.text; t.onclick = () => { if (apple == null && n.id != null) { sel = n.id; render(); } };
+    stage.append(t); return t;
+  }
+  function render() {
+    const pos = layout();
+    for (const n of nodes) {
+      const t = el[n.id] ??= n.root ? node(n, 'root', '<div class="t5-sq"><span class="txt"></span></div>')
+        : node(n, 'wait', `<div class="t5-leaf"></div>${SPROUT}<div class="t5-sq"><span class="tag"></span><span class="txt"></span></div>`);
+      t.classList.toggle('sel', sel === n.id && apple == null);
+      t.style.left = pos[n.id].x + 'px'; t.style.top = pos[n.id].y + 'px';
+    }
+    lines.innerHTML = '';
+    const link = (a, b, ha, hb) => {
+      const y1 = a.y - ha, y2 = b.y + hb, my = (y1 + y2) / 2;
+      const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      p.setAttribute('d', `M${a.x},${y1} C${a.x},${my} ${b.x},${my} ${b.x},${y2}`);
+      lines.append(p); p.style.setProperty('--len', p.getTotalLength());
+    };
+    nodes.filter((n) => n.parent != null).forEach((n) => link(pos[n.parent], pos[n.id], nodes[n.parent].root ? 23 : 42, 58));
+    if (apple != null) {
+      const a = el.apple ??= node({ text: nodes[apple].text }, 'apple', '<div class="t5-sq"><div style="font-size:22px;line-height:1.1">🍏</div><span class="txt"></span></div>');
+      a.style.left = pos.apple.x + 'px'; a.style.top = pos.apple.y + 'px'; link(pos[apple], pos.apple, 58, 42);
+    }
+    stage.querySelector('.t5-ask')?.remove();
+    if (apple == null) {
+      const s = pos[sel], i = asked % 4, ask = document.createElement('div'); ask.className = 't5-ask';
+      ask.innerHTML = `<img src="../public/img/mendako-${IMG[i]}.png" alt=""><span></span>`; ask.querySelector('span').textContent = ASKS[i];
+      ask.style.left = Math.max(0, Math.min(s.x + 100, stage.clientWidth - 240)) + 'px'; ask.style.top = (s.y - (nodes[sel].root ? 50 : 64)) + 'px'; stage.append(ask);
+    }
+  }
+  const judge = (text, parent) => (/[？?]|本当|ほんと|なぜ|そもそも/.test(text) ? '疑う' : /する$|決め|にする|やる/.test(text) ? '決める' : parent !== 0 ? '深める' : '広げる');
+  document.getElementById('t5-form').onsubmit = (e) => {
+    e.preventDefault(); const input = document.getElementById('t5-in'); const text = input.value.trim();
+    if (!text || apple != null) return;
+    const n = { id: nodes.length, parent: sel, text }; nodes.push(n); input.value = ''; asked++;
+    status.textContent = 'めんだこたちが判断しています…'; render();
+    setTimeout(() => { n.kind = judge(text, n.parent); grow(n); status.textContent = `「${n.kind}」の葉が開きました。タイルを選ぶと、その上に伸びます。`; }, 1300);
+  };
+  document.getElementById('t5-end').onclick = () => {
+    const leaves = nodes.filter((n) => !n.root); if (!leaves.length || apple != null) return;
+    const count = (id) => nodes.filter((n) => n.parent === id).reduce((s, n) => s + 1 + count(n.id), 0);
+    apple = leaves.reduce((a, b) => (count(b.id) > count(a.id) ? b : a)).id;
+    status.textContent = '今回いちばん考えた項目が🍏になりました。'; render();
+  };
+  [['絵文字は少なめにしてほしい', 0], ['毎週投稿って本当に必要？', 0], ['反応を見て頻度を決める', 2]].forEach(([text, parent]) => nodes.push({ id: nodes.length, parent, text }));
+  sel = 3; render();
+  nodes.slice(1).forEach((n, i) => setTimeout(() => { n.kind = judge(n.text, n.parent); grow(n); }, 800 + i * 600));
+  addEventListener('resize', render);
+})();
+</script>
+
+<h3>未確認・次の検討</h3>
+<ul>
+  <li>本番の判断（4分類）は、めんだこ（AI）が付ける。待ち時間は数秒〜30秒なので、その間は芽のまま揺らす。</li>
+  <li>タイルが増えて横幅を超えたときの見せ方（横スクロールか、縮小か）。</li>
+  <li>スマホ幅では、左の作業欄の下に図を置く。</li>
+</ul>
+</article>
+
+<article id="2026-11-05-ui-tree">
+<p class="date">2026-11-05</p>
+<h2>左で作業、右で思考の木が育つ画面にする（作者のスケッチから）</h2>
+
+<h3>何を変えたか</h3>
+<ul>
+  <li>画面を左右に分ける。左は「ここで作業」（事業内容 → めんだこ4匹 → ASK → 回答欄）、右は「TREE」（上に過去の検討、根元に今回の題材）。</li>
+  <li>答えると茎が伸びて🌱芽が出て、葉の中に本人の言葉が入る。<b>AIが出したものは葉にしない。</b>AIはめんだこの質問（吹き出し）として枝の横に出るだけ。</li>
+  <li>芽と葉の色は「考え方の動き」の4分類: <span class="sw" style="background:#3A9E4F"></span>広げる <span class="sw" style="background:#2B6CB0"></span>深める <span class="sw" style="background:#D64545"></span>疑う <span class="sw" style="background:#E0B400"></span>決める。分類はAIが付け、本人が直せる。</li>
+  <li>葉にならないまま止まった芽が「つまった」。前に見落とした型を自分で出せた葉には💡。</li>
+  <li>終わったとき、今回いちばん考えた項目（その葉から伸びた枝が一番多いもの）が、木の一番上で🍏になる。</li>
+  <li>めんだこは全員オレンジ。持ち物で見分ける（新入社員=若葉マーク、財務=¥の袋、法務・リスク管理=LAWの本、引き継ぎ相手=矢印）。</li>
+</ul>
+
+<h3>修正理由</h3>
+<p>作者のスケッチ（UIイメージ・ツリーイメージ）で、今の「丸と枝の木」とカードをめくる画面がイメージと違うと分かった。分類は最初「発見・深掘り・つまった・決めた」を出したが、作者の「思考力を重視するなら最適？」を受けて、進み具合ではなく考え方のクセが見える4つに変えた。色の偏りで「広げてばかりで疑っていない」などが分かる。</p>
+
+<div class="mock-ui" style="display:grid;grid-template-columns:1fr 1.2fr;gap:0;border:2px solid #20241f;border-radius:14px;overflow:hidden;background:#fff;margin:16px 0">
+  <div style="padding:14px;border-right:2px solid #20241f">
+    <div style="display:flex;align-items:center;gap:8px;border-bottom:1px solid #d9d4c7;padding-bottom:6px"><b style="font-size:18px">PDCAI</b><img src="../public/img/mendako-misreading.png" alt="" width="40"></div>
+    <p style="margin:10px 0 4px;font-size:13px;color:#646a60">事業内容</p>
+    <div style="border:1px solid #d9d4c7;border-radius:6px;padding:6px;font-size:14px">週1回のSNS告知を外部の人に任せる</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0;text-align:center;font-size:11px">
+      <div><img src="../public/img/mendako-first-timer.png" alt="" width="56"><br>新入社員</div>
+      <div><img src="../public/img/mendako-money-ops.png" alt="" width="56"><br>財務</div>
+      <div><img src="../public/img/mendako-breaker.png" alt="" width="56"><br>法務・リスク</div>
+      <div><img src="../public/img/mendako-misreading.png" alt="" width="56"><br>引き継ぎ相手</div>
+    </div>
+    <p style="margin:4px 0;font-size:13px"><b style="border:1px solid #20241f;padding:0 6px">ASK</b> 財務: 返金してと言われたら、誰が決める？</p>
+    <div style="border:1px solid #20241f;border-radius:6px;padding:8px;min-height:56px;font-size:14px;color:#646a60">回答欄（一言でOK・「わからない」でもOK）</div>
+  </div>
+  <div style="padding:10px">
+    <div style="display:flex;justify-content:space-between;border-bottom:1px solid #d9d4c7"><b>TREE</b><span style="font-size:12px;color:#646a60">上: 過去の検討 1周目 ▸</span></div>
+    <svg viewBox="-40 0 470 420" width="100%" role="img" aria-label="思考の木の見本">
+      <defs><path id="leaf" d="M0,0 C30,-38 92,-34 118,-6 C92,30 30,34 0,0 Z"/></defs>
+      <rect x="130" y="380" width="160" height="34" rx="6" fill="#fffdf8" stroke="#20241f"/>
+      <text x="210" y="402" text-anchor="middle" font-size="12">SNS告知を外部に任せる</text>
+      <path d="M210 380 C210 320 205 260 210 70" stroke="#7a5236" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <path d="M208 330 C170 320 140 310 110 300" stroke="#8f6545" stroke-width="3" fill="none"/>
+      <path d="M210 270 C250 262 280 250 300 240" stroke="#8f6545" stroke-width="3" fill="none"/>
+      <path d="M209 200 C175 192 150 180 120 170" stroke="#8f6545" stroke-width="3" fill="none"/>
+      <path d="M120 170 C100 150 95 130 90 115" stroke="#8f6545" stroke-width="2" fill="none"/>
+      <path d="M210 150 C245 140 270 130 300 120" stroke="#8f6545" stroke-width="3" fill="none"/>
+      <path d="M300 240 C330 230 345 222 360 215" stroke="#8f6545" stroke-width="2" fill="none"/>
+      <g transform="translate(-8,300) "><use href="#leaf" fill="#e5f3e8" stroke="#3A9E4F" stroke-width="2.5"/><text x="58" y="4" text-anchor="middle" font-size="10">絵文字は少なめ</text></g>
+      <g transform="translate(300,240)"><use href="#leaf" fill="#e8eff8" stroke="#2B6CB0" stroke-width="2.5" transform="scale(.9)"/><text x="52" y="4" text-anchor="middle" font-size="10">文面は任せる</text></g>
+      <text x="364" y="212" font-size="16">🌱</text><text x="350" y="232" font-size="9" fill="#646a60">つまった</text>
+      <g transform="translate(2,170)"><use href="#leaf" fill="#fbe9e9" stroke="#D64545" stroke-width="2.5"/><text x="58" y="-2" text-anchor="middle" font-size="10">毎週投稿って</text><text x="58" y="11" text-anchor="middle" font-size="10">本当に必要？</text></g>
+      <g transform="translate(-20,115)"><use href="#leaf" fill="#e8eff8" stroke="#2B6CB0" stroke-width="2.5" transform="scale(.9)"/><text x="52" y="4" text-anchor="middle" font-size="10">反応で頻度を決める</text></g>
+      <g transform="translate(300,120)"><use href="#leaf" fill="#fdf6d6" stroke="#E0B400" stroke-width="2.5" transform="scale(.9)"/><text x="52" y="4" text-anchor="middle" font-size="10">OKはDMで返す</text></g>
+      <text x="96" y="160" font-size="16">💡</text>
+      <circle cx="210" cy="48" r="26" fill="#d94a3a"/><path d="M210 24 q6 -12 14 -14" stroke="#3A9E4F" stroke-width="3" fill="none"/>
+      <text x="210" y="45" text-anchor="middle" font-size="9" fill="#fff">毎週投稿って</text><text x="210" y="57" text-anchor="middle" font-size="9" fill="#fff">本当に必要？</text>
+      <image href="../public/img/mendako-money-ops.png" x="236" y="282" width="34" height="24"/>
+      <rect x="270" y="280" width="140" height="24" rx="10" fill="#fff0e2" stroke="#F07F1A"/>
+      <text x="340" y="296" text-anchor="middle" font-size="10">返金は誰が決める？</text>
+    </svg>
+  </div>
+</div>
+<p style="font-size:14px;color:#646a60">見本の中身は架空の例。🍏の中身＝今回いちばん枝が伸びた葉（「毎週投稿って本当に必要？」から2本伸びた）。めんだこのオレンジは仮に色をかけたもの。清書・ドット絵が届いたら差し替える。</p>
+
+<h3>未確認・次の検討</h3>
+<ul>
+  <li>根元に毎回「今回の題材」が入る、で合っているか（作者に確認中）。</li>
+  <li>🍏の決め方: 「その葉から伸びた枝の数」でよいか。同数なら本人が選ぶ案。</li>
+  <li>今のカードをめくる画面（#/stretch）と引継ぎカード（#/handover）を、この左右の画面にどうまとめるか。</li>
+  <li>スマホ幅では左右を上下に並べる。</li>
+</ul>
+</article>
+
+<article id="2026-11-04-handover">
+<p class="date">2026-11-04（6日に見る用）</p>
+<h2>引継ぎ書の出口を、3つの違う形で考え直す</h2>
+
+<h3>何を変えたか</h3>
+<p>観点帳の項目を並べるだけの下書き（42項目の一覧）をやめ、まったく違う形を3つ見本にした。中身は架空の例「週1回のSNS告知を外部の人に任せる」。</p>
+
+<h3>修正理由</h3>
+<p>作者から「引継ぎになってない」「全部微妙」（手間・問いの中身・完成形・見せ方のどれも）。一覧はAIの問いの羅列で、引継ぎ書に要る「答え」がなく、長く、動画でも映えない。穴埋め式も結局フォームと同じで重い。</p>
+
+<style>
+  .mock { border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: #fff; margin: 12px 0; font-size: 14px; }
+  .mock h4 { margin: 0 0 8px; font-size: 16px; }
+  .slot { border-radius: 6px; padding: 8px 10px; margin: 6px 0; }
+  .own { background: #e6f5ef; border-left: 4px solid #009E73; }
+  .gap { background: #fdf2e0; border-left: 4px solid #E69F00; }
+  .stuck { background: #fdf2e0; border-left: 4px solid #E69F00; }
+  .pass { background: #e6f5ef; border-left: 4px solid #009E73; }
+  .tag { font-size: 12px; color: var(--sub); }
+  .opt { font-weight: bold; }
+</style>
+
+<h3 class="opt">A. 1枚の引継ぎカード</h3>
+<p>見出しを6つに固定した1枚。あなたが話した言葉で埋まった欄は緑、まだ空いている欄だけAI社員が「ここが空いています」と橙で示す。答えるのは空いた欄だけで、飛ばしてもよい。周回を重ねるとカードが埋まっていく。</p>
+<div class="mock">
+  <h4>引継ぎカード: 週1回のSNS告知</h4>
+  <div class="slot own"><span class="tag">この仕事は何のため</span><br>新しい機能を使ってくれる人に知らせる</div>
+  <div class="slot own"><span class="tag">いつもの流れ</span><br>更新内容をもらう → 下書き → 私がOK → 投稿</div>
+  <div class="slot own"><span class="tag">自分で決めていいこと／必ず聞くこと</span><br>文面は任せる。価格と返金の話は必ず相談して</div>
+  <div class="slot own"><span class="tag">困ったら</span><br>何かあったら、すぐDMで報告。夜でもいい</div>
+  <div class="slot gap"><span class="tag">触ってはいけないもの</span><br>空いています（リスク管理から: パスワードや鍵の扱いがまだ書かれていません）</div>
+  <div class="slot gap"><span class="tag">前任者のコツ</span><br>空いています（新入社員から: 好まれる言い回しや、避けたい表現は？）</div>
+</div>
+<p>工数: 半日。動画の見せ方: 空欄が周回ごとに埋まっていく。</p>
+
+<h3 class="opt">B. 後任AIテスト（推奨）</h3>
+<p>あなたが書いた引継ぎ書（雑なメモでもいい）を、AIの新入社員が「それだけを読んで」よくある仕事を3つやってみる。止まったところを、引継ぎ書のどの行で止まったか付きで返す。あなたが1行足して、もう一度テストする。「何を書けば伝わるか」を、問いの一覧ではなく、実際に止まった場所で教えてくれる。</p>
+<div class="mock">
+  <h4>後任AIテスト 1回目: 止まったところ 3件</h4>
+  <div class="slot stuck"><span class="tag">仕事1: 新機能の告知を下書きする</span><br>止まった: 「私がOK」とあるが、OKの連絡はどこで待てばいい？</div>
+  <div class="slot pass"><span class="tag">仕事2: 返金について聞かれた</span><br>できた: 「価格と返金の話は必ず相談」の行で判断できた</div>
+  <div class="slot stuck"><span class="tag">仕事3: 投稿に誤字を見つけた</span><br>止まった: 消して出し直していいのか、書かれていない</div>
+  <h4 style="margin-top:12px">2回目（あなたが2行足した後）: 止まったところ 0件</h4>
+</div>
+<p>工数: 1日。動画の見せ方: 止まった数が 3→0 に減る。人間が書き、AIは「伝わるか」を試すだけなので、「AIだけじゃダメですか？！」とそのままつながる。止まった型は観点帳に積まれ、次の引継ぎでは自分で先に書けるかを測れる。</p>
+
+<h3 class="opt">C. ケース表</h3>
+<p>引継ぎを「こういうときは、こうする」の表にする。AI社員がよくある場面を5つ出し、あなたは各場面に一言（「任せる」「相談」「止めて」など）で答える。前に話していた「このケースは返金した、このケースは相談して」をそのまま形にしたもの。</p>
+<div class="mock">
+  <table>
+    <thead><tr><th>こういうとき</th><th>こうする</th></tr></thead>
+    <tbody>
+      <tr><td>返金してほしいと言われた</td><td>相談して</td></tr>
+      <tr><td>投稿に誤字を見つけた</td><td>任せる（直して出し直してOK）</td></tr>
+      <tr><td>料金が変わった</td><td>古い告知を止めてから新しい告知</td></tr>
+      <tr><td>クレームが来た</td><td>返信せず、すぐ報告</td></tr>
+      <tr><td>どれか分からない</td><td>相談して</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>工数: 半日。動画の見せ方: 表として分かりやすいが、地味。</p>
+
+<h3>未確認・次の検討</h3>
+<ul>
+  <li>Bは「AIが読んで止まる」が、人間の後任が止まる場所と同じかは未確認。</li>
+  <li>3つとも、作者の観点帳の中身（Mimilyの委託）で実際に作ってみるのは、作者が選んでから。</li>
+</ul>
+</article>
+
 <article id="2026-11-04-tree">
 <p class="date">2026-11-04</p>
 <h2>観点帳のツリーを「一本の木」に作り直す</h2>

@@ -197,3 +197,17 @@ button.ghost, .button.ghost { color: var(--ink); background: transparent; border
 .feel button { color: var(--ink); background: transparent; border: 1px solid #b9b3a4; }
 .feel button[aria-pressed="true"] { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .stretch-inner { transition: none; } }
+
+/* めんだこは全員オレンジ。誰かは持ち物（若葉マーク・¥の袋・LAWの本・矢印）で見分ける。 */
+.lens-first-timer, .lens-breaker, .lens-money-ops, .lens-misreading { --lens: #F07F1A; --lens-bg: #FFF0E2; }
+.stretch-card .stretch-face.front, .stretch-card .stretch-face.back { border-top-color: var(--lens); }
+.stretch-card .stretch-face.front { background: var(--lens-bg); }
+.mendako { display: block; object-fit: contain; }
+.stretch-face .mendako { margin-bottom: 4px; }
+.slot { display: block; margin: 14px 0; font-weight: 700; }
+.slot textarea { font-weight: 400; }
+.slot-nudge { display: flex; align-items: center; gap: 10px; margin-top: 6px; padding: 6px 10px; border-left: 4px solid var(--lens); background: var(--lens-bg); border-radius: 6px; font-weight: 400; font-size: 14px; }
+.test-results li { border-left: 4px solid #E69F00; padding: 6px 10px; margin: 8px 0; background: #fdf6ea; border-radius: 4px; }
+.test-results li.pass { border-color: #009E73; background: #e8f5ef; }
+.test-results small { font-weight: 700; }
+.stuck-trend { font-weight: 700; font-size: 18px; }

@@ -445,7 +445,7 @@ const LEVEL_LABEL = { 2: '補助輪 強（見落とした例を出す）', 1: '�
 
 async function notebookView() {
   setChain([]);
-  const { cycles, stats, hints, lenses } = await api('notebook');
+  const { cycles, stats, hints, lenses, humanOnly } = await api('notebook');
   drawGrowthTree(cycles, lenses);
   const pctText = (v) => (v == null ? '-' : `${v}%`);
   show(
@@ -461,7 +461,13 @@ async function notebookView() {
         h('p', {}, `自分で ${s.self} / ヒントで ${s.hint} / AIだけ ${s.ai}（全${s.total}件、自分で出せた割合 ${pctText(s.selfRate)}）`, s.ownOnly ? ` / 自分だけ ${s.ownOnly}` : '', s.spread ? ` / ヒントで広がった ${s.spread}` : ''),
         s.recalled ? h('p', { class: 'recall-note' }, `前に見落とした型を、ヒントなしで自分で出せた ${s.recalled}`) : null,
         h('p', { class: 'muted' }, `${s.mode === 'card' ? 'カード' : 'スキル'}で回した`, s.feel == null ? '' : `　考える力の手応え: ${FEEL.find(([v]) => v === s.feel)[1]}`),
-        h('p', { class: 'muted' }, `最初の自信 ${s.confidenceBefore}% → 見直し ${pctText(s.confidenceAfter)}　思い込みのズレ ${s.selfRate == null ? '-' : `${s.confidenceBefore - s.selfRate}pt`}`))))) : null,
+        h('p', { class: 'muted' }, `最初の自信 ${s.confidenceBefore}% → 見直し ${pctText(s.confidenceAfter)}　思い込みのズレ ${s.selfRate == null ? '-' : `${s.confidenceBefore - s.selfRate}pt`}`),
+        h('p', {}, s.stuck.length ? h('span', { class: 'stuck-trend' }, `後任AIテストで止まった数 ${s.stuck.join(' → ')} `) : null,
+          h('a', { href: `#/handover/${s.id}` }, s.stuck.length ? '引継ぎカードを開く' : '引継ぎカードを書く')))))) : null,
+    humanOnly.length ? h('section', { class: 'card' },
+      h('h2', {}, '人間だけ帳'),
+      h('p', { class: 'muted' }, 'AI社員4人の誰も出さなかった、あなたの考えです。後任AIテストの仕事づくりに使います。'),
+      h('ul', { class: 'list note-own' }, humanOnly.map((x) => h('li', {}, x.text, h('div', { class: 'muted' }, x.project))))) : null,
     h('section', { class: 'card' },
       h('h2', {}, '補助輪の状態'),
       hints.length
@@ -476,10 +482,16 @@ async function notebookView() {
 const FEEL = [[-2, '下がった'], [-1, '少し下がった'], [0, '変わらない'], [1, '少し上がった'], [2, '上がった']];
 const ITEM_LABEL = { self: '自分でも出せた', hint: 'ヒントで出せた', ai: 'AI社員だけ' };
 
+// AI社員4人は、作者が描いためんだこ。全員オレンジで、持ち物で見分ける。
+function mendako(lens, size = 100) {
+  return h('img', { class: 'mendako', src: `/img/mendako-${lens}.png`, alt: '', width: size, height: Math.round(size * 0.7) });
+}
+
 function stretchCard(card, back) {
-  return h('div', { class: 'stretch-card' },
+  return h('div', { class: `stretch-card lens-${card.lens}` },
     h('div', { class: 'stretch-inner' },
       h('div', { class: 'stretch-face front', 'aria-hidden': back ? 'true' : null },
+        mendako(card.lens),
         h('b', { class: 'stretch-name' }, card.name),
         h('p', {}, card.question)),
       h('div', { class: 'stretch-face back', 'aria-hidden': back ? null : 'true' },
@@ -556,7 +568,9 @@ function stretchReveal(st, { cycle, summary }) {
       form(async (v) => {
         if (feel == null) throw new Error('手応えを1つ選んでください');
         await api(`stretch/${st.id}/feel`, { feel, confidenceAfter: Number(v.confidence) });
-        show(h('h1', {}, '記録しました'), h('p', {}, h('a', { class: 'button', href: '#/notebook' }, '観点帳の木を見る'), ' ', h('a', { class: 'button ghost', href: '#/stretch' }, 'もう一度呼ぶ')));
+        show(h('h1', {}, '記録しました'),
+          h('p', { class: 'lead' }, '次は、人に渡せる1枚の引継ぎカードにします。書くのはあなたの言葉だけです。'),
+          h('p', {}, h('a', { class: 'button', href: `#/handover/${cycle.id}` }, '引継ぎカードを書く'), ' ', h('a', { class: 'button ghost', href: '#/notebook' }, '観点帳の木を見る')));
       },
       buttons,
       percentField('今の自信（%）', 'confidence', cycle.confidenceBefore, 0),
@@ -564,11 +578,56 @@ function stretchReveal(st, { cycle, summary }) {
   );
 }
 
+// 1枚の引継ぎカード。空いた欄はその担当のめんだこが指摘し、後任役のAIがカードだけで仕事を試す。
+async function handoverView(cycleId) {
+  setChain([]);
+  const { cycles, slots, lenses } = await api('notebook');
+  const cycle = cycles.find((c) => c.id === cycleId);
+  if (!cycle) throw new Error('この周回は見つかりません');
+  const card = cycle.handover?.card ?? {};
+  const nudge = (slot) => h('div', { class: `slot-nudge lens-${slot.lens}` }, mendako(slot.lens, 48), h('span', {}, `${lenses[slot.lens]}: ${slot.ask}`));
+  const rows = slots.map((slot) => {
+    const box = h('div', {}, card[slot.key] ? null : nudge(slot));
+    const area = h('textarea', { name: slot.key, rows: 3, maxlength: 2000, value: card[slot.key] ?? '',
+      oninput: (e) => box.replaceChildren(e.target.value.trim() ? '' : nudge(slot)) });
+    return h('label', { class: 'slot' }, slot.heading, area, box);
+  });
+  const results = h('section', { 'aria-live': 'polite' });
+  const renderResults = (handover) => {
+    const last = handover.tests.at(-1);
+    if (!last) return;
+    const text = [`# 引継ぎカード: ${cycle.project}`, '', ...slots.flatMap((s) => [`## ${s.heading}`, handover.card[s.key] || '（空いています）', ''])].join('\n');
+    const download = h('a', { class: 'button ghost', download: `引継ぎカード_${cycle.project}.md`, href: URL.createObjectURL(new Blob([text], { type: 'text/markdown' })) }, 'カードを書き出す（.md）');
+    results.replaceChildren(h('div', { class: 'card' },
+      h('h2', {}, `後任AIテスト ${handover.tests.length}回目: 止まった ${last.stuck} / ${last.results.length}`),
+      handover.tests.length > 1 ? h('p', { class: 'stuck-trend' }, `止まった数 ${handover.tests.map((t) => t.stuck).join(' → ')}`) : null,
+      h('ul', { class: 'list test-results' }, last.results.map((r) => h('li', { class: r.result === 'できた' ? 'pass' : 'stuck' },
+        h('small', {}, r.result), h('div', {}, r.job),
+        h('div', { class: 'muted' }, r.result === 'できた' ? `根拠: ${r.line}` : `止まった: ${r.why}`),
+        r.missing ? h('div', {}, `足りない1行: ${r.missing}`) : null))),
+      last.stuck ? h('p', { class: 'muted' }, 'カードに書き足して、もう一度試してください。書くのはあなたの言葉です。') : h('p', {}, '後任役のAIは、このカードだけで全部の仕事ができました。'),
+      h('p', {}, download)));
+  };
+  show(
+    h('h1', {}, `引継ぎカード: ${cycle.project}`),
+    h('p', { class: 'lead' }, '6つの欄を、あなたの言葉で埋めます。空いている欄は、担当のめんだこが声をかけます。書けたら、後任役のAIがこのカードだけを読んで、よくある仕事を試します。'),
+    form(async (v) => {
+      results.replaceChildren(h('p', { class: 'muted' }, '後任役のAIが、カードだけを読んで仕事を試しています（30秒ほど）…'));
+      const out = await api(`handover/${cycleId}`, { card: v });
+      renderResults(out.handover);
+    }, ...rows, h('button', { type: 'submit' }, '後任AIに試してもらう')),
+    results,
+  );
+  if (cycle.handover) renderResults(cycle.handover);
+}
+
 async function router() {
   const hash = location.hash || '#/';
   try {
     const m = hash.match(/^#\/s\/([\w-]+)$/);
-    if (hash === '#/new') newSession();
+    const ho = hash.match(/^#\/handover\/(c\d+)$/);
+    if (ho) await handoverView(ho[1]);
+    else if (hash === '#/new') newSession();
     else if (hash === '#/notebook') await notebookView();
     else if (hash === '#/stretch') stretchView();
     else if (m) await session(m[1]);
