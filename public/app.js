@@ -525,9 +525,7 @@ function cycleBars(stats) {
 function tileTrees(cycles, lenses = {}) {
   const icon = (lens) => h('img', { src: `/img/mendako-${lens}.png`, alt: '' });
   const pairs = (list) => list.reduce((rows, x, i) => (i % 2 ? rows.at(-1).push(x) : rows.push([x]), rows), []);
-  // 蔓は、その上の段の葉が開く少し前に、下から伸びる。
-  const fork = (at) => svg('svg', { class: 'tt-fork', viewBox: '0 0 100 24', preserveAspectRatio: 'none', 'aria-hidden': 'true', style: `animation-delay:${Math.max(at, 0)}s` },
-    svg('path', { d: 'M50 24 C50 10 25 14 25 0' }), svg('path', { d: 'M50 24 C50 10 75 14 75 0' }));
+  // 幹が下から伸び、その高さに来たところで枝が出て、葉が開き、カードが出る。
   const STEP = 0.3;
   return h('section', { class: 'card' },
     h('h2', {}, '思考の木（周回ごと）'),
@@ -536,15 +534,15 @@ function tileTrees(cycles, lenses = {}) {
     h('div', { class: 'tt-row' }, cycles.map((c, ci) => {
       let n = 0;
       const start = ci * 1.2;
-      const delay = () => `animation-delay:${start + (n++) * STEP}s`;
-      const vine = (row) => fork(start + row * 2 * STEP - 0.35);
-      const top = start + c.own.length * STEP;
+      // 幹がその段の高さに届いてから枝を出すので、1つ分遅らせる。
+      const delay = () => `--d:${start + (++n) * STEP}s`;
+      const top = start + (c.own.length + 1) * STEP;
       const tile = (o) => {
         const asked = c.items.find((i) => i.ownId === o.id);
         const answered = o.phase === 'hint';
         return h('div', { class: `tt-tile ${answered ? 'answered' : 'self'}`, title: o.text, style: delay() },
           asked && answered ? h('div', { class: 'tt-ask', title: asked.item }, icon(asked.lens), h('span', {}, h('b', {}, lenses[asked.lens] ?? ''), asked.item)) : null,
-          h('span', { class: 'tt-leaf' }), h('div', { class: 'tt-sq' }, o.recalls ? '💡 ' : '', o.text),
+          h('span', { class: 'tt-branch', 'aria-hidden': 'true' }), h('span', { class: 'tt-leaf', 'aria-hidden': 'true' }), h('div', { class: 'tt-sq' }, o.recalls ? '💡 ' : '', o.text),
           asked && !answered ? h('div', { class: 'tt-same', title: asked.item }, icon(asked.lens), `${lenses[asked.lens] ?? 'めんだこ'}も同じ所を見ていた`) : null);
       };
       const buds = c.items.filter((i) => i.status === 'ai');
@@ -556,7 +554,7 @@ function tileTrees(cycles, lenses = {}) {
           h('small', {}, h('b', {}, `🌱 芽＝めんだこだけが見た所 ${buds.length}`), '（あなたはまだ出せていない。次に考える所）'),
           buds.map((i, k) => h('div', { class: 'tt-bud', title: i.item, style: `animation-delay:${top + 0.7 + k * 0.12}s` }, icon(i.lens), h('span', {}, i.item)))) : null,
         h('p', { class: 'tt-zone' }, h('b', {}, '🍃 葉＝あなたが先に考えたこと'), `（1枚＝1行、${c.own.length}枚）`),
-        h('div', { class: 'tt-stack' }, rows.flatMap((r, i) => (i ? [vine(i), r] : [r])).reverse(), vine(0)),
+        h('div', { class: 'tt-stack' }, h('span', { class: 'tt-trunk', 'aria-hidden': 'true', style: `--d:${start}s;--len:${Math.max(c.own.length, 1) * STEP}s` }), rows.reverse()),
         h('div', { class: 'tt-root' }, h('small', {}, '根＝題材'), c.project));
     })));
 }
