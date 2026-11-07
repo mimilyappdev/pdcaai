@@ -839,13 +839,12 @@ async function handoverView(cycleId) {
   const cycle = cycles.find((c) => c.id === cycleId);
   if (!cycle) throw new Error('この周回は見つかりません');
   const card = cycle.handover?.card ?? {};
-  const nudge = (slot) => h('div', { class: `slot-nudge lens-${slot.lens}` }, mendako(slot.lens, 48), h('span', {}, `${lenses[slot.lens]}: ${slot.ask}`));
-  const rows = slots.map((slot) => {
-    const box = h('div', {}, card[slot.key] ? null : nudge(slot));
-    const area = h('textarea', { name: slot.key, rows: 3, maxlength: 2000, value: card[slot.key] ?? '',
-      oninput: (e) => box.replaceChildren(e.target.value.trim() ? '' : nudge(slot)) });
-    return h('label', { class: 'slot' }, slot.heading, area, box);
-  });
+  // 資料は①の「いつもの流れ」から始める。前の6欄の形で書いた分は、見出し付きで追記に移して続きを書けるようにする。
+  const legacy = slots.filter((s) => card[s.key]).map((s) => `【${s.heading}】\n${card[s.key]}`).join('\n\n');
+  const rows = [
+    h('label', {}, '資料（①のいつもの流れ）', h('small', {}, 'ここを直してもかまいません'), h('textarea', { name: 'doc', rows: 10, maxlength: 8000, value: card.doc ?? cycle.summary ?? '' })),
+    h('label', {}, '追記', h('small', {}, '後任めんだこが止まった所への答えや、資料に書いていないこと'), h('textarea', { name: 'extra', rows: 6, maxlength: 8000, value: card.extra ?? legacy })),
+  ];
   // 書く手が止まったときに、①でめんだこが出した指摘を見返すためのヒント。押すまでは隠しておく。
   const hints = h('section', { class: 'card hint-box', hidden: true },
     Object.entries(lenses).map(([lens, name]) => {
@@ -861,7 +860,10 @@ async function handoverView(cycleId) {
   const renderResults = (handover) => {
     const last = handover.tests.at(-1);
     if (!last) return;
-    const text = [`# 引継ぎカード: ${cycle.project}`, '', ...slots.flatMap((s) => [`## ${s.heading}`, handover.card[s.key] || '（空いています）', ''])].join('\n');
+    const c = handover.card;
+    const text = c.doc != null || c.extra != null
+      ? [`# 引継ぎカード: ${cycle.project}`, '', '## 資料', c.doc || '（空いています）', '', '## 追記', c.extra || '（なし）', ''].join('\n')
+      : [`# 引継ぎカード: ${cycle.project}`, '', ...slots.flatMap((s) => [`## ${s.heading}`, c[s.key] || '（空いています）', ''])].join('\n');
     const download = h('a', { class: 'button ghost', download: `引継ぎカード_${cycle.project}.md`, href: URL.createObjectURL(new Blob([text], { type: 'text/markdown' })) }, 'カードを書き出す（.md）');
     // rightStop は、カードに「決まっていない（前任者に確認）」とあり、止まって前任者に聞くのが正しい場面。
     const kind = (r) => (r.result === 'できた' ? 'pass' : r.rightStop ? 'ask' : 'stuck');
@@ -891,14 +893,12 @@ async function handoverView(cycleId) {
   };
   show(
     h('h1', {}, `引継ぎカード: ${cycle.project}`),
-    h('p', { class: 'lead' }, '6つの欄を、あなたの言葉で埋めます。空いている欄は、担当のめんだこが声をかけます。書けたら、後任役のAIがこのカードだけを読んで、よくある仕事を試します。'),
-    cycle.items.length ? h('p', {}, hintButton) : null,
-    hints,
+    h('p', { class: 'lead' }, '①の資料を、後任めんだこがそのまま読んで、よくある仕事を試します。止まった所は「追記」に、あなたの言葉で書き足してください。'),
     form(async (v) => {
       results.replaceChildren(thinking('後任役のAIが、カードだけを読んで仕事を試しています（30秒ほど）'));
       const out = await api(`handover/${cycleId}`, { card: v });
       renderResults(out.handover);
-    }, ...rows, h('button', { type: 'submit' }, '後任めんだこに試してもらう')),
+    }, rows[0], cycle.items.length ? h('p', {}, hintButton) : null, hints, rows[1], h('button', { type: 'submit' }, '後任めんだこに試してもらう')),
     results,
   );
   if (cycle.handover) renderResults(cycle.handover);

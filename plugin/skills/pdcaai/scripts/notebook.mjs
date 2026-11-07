@@ -272,7 +272,11 @@ export function applyHandover(book, input) {
   const cycle = book.cycles.find((c) => c.id === input.id);
   if (!cycle) throw new Error('この周回は見つかりません');
   const handover = cycle.handover ?? { card: {}, jobs: [], tests: [] };
-  if (input.card) handover.card = Object.fromEntries(HANDOVER.map(({ key }) => [key, String(input.card[key] ?? '').trim().slice(0, 2000)]));
+  if (input.card) {
+    handover.card = Object.fromEntries(HANDOVER.map(({ key }) => [key, String(input.card[key] ?? '').trim().slice(0, 2000)]));
+    // 資料＋追記の形。資料は①の「いつもの流れ」から始め、止まった所を追記に書き足す。
+    if (input.card.doc != null || input.card.extra != null) Object.assign(handover.card, { doc: String(input.card.doc ?? '').trim().slice(0, LIMIT.doc), extra: String(input.card.extra ?? '').trim().slice(0, LIMIT.doc) });
+  }
   if (input.jobs) handover.jobs = input.jobs.slice(0, 5).map((j) => String(j).slice(0, 200));
   if (input.test) handover.tests.push({
     at: new Date().toISOString(),
@@ -285,6 +289,10 @@ export function applyHandover(book, input) {
 
 export function handoverText(cycle) {
   const card = cycle.handover?.card ?? {};
+  if (card.doc != null || card.extra != null) {
+    return [`# 引継ぎカード: ${cycle.project}`, '', '## 資料', card.doc || '（空いています）', '', '## 追記', card.extra || '（なし）', '',
+      ...HANDOVER.filter(({ key }) => card[key]).flatMap(({ key, heading }) => [`## ${heading}`, card[key], ''])].join('\n');
+  }
   return [`# 引継ぎカード: ${cycle.project}`, '', ...HANDOVER.flatMap(({ key, heading }) => [`## ${heading}`, card[key] || '（空いています）', ''])].join('\n');
 }
 
