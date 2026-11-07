@@ -28,10 +28,29 @@ export async function makeJobs(provider, cycle, book) {
   return res.jobs.slice(0, 3);
 }
 
-export async function successorTest(provider, cycle, jobs) {
+const MANUAL_SCHEMA = {
+  type: 'object',
+  properties: { manual: { type: 'string' } },
+  required: ['manual'],
+  additionalProperties: false,
+};
+
+// 引継ぎマニュアルの清書。AIは並べ替えと整えだけをして、カードにないことは足さない。
+// 足していないことは、清書後にもう一度後任AIテストを回して、止まった数が変わらないことで確かめる。
+export async function makeManual(provider, cycle) {
+  const res = await provider.generate({
+    system: 'あなたは清書係です。渡された引継ぎカード（資料と追記）を、新しく来た人が読む引継ぎマニュアルに整えます。してよいのは、並べ替え、見出しを付ける、同じことをまとめる、誤字と言い回しを直すことだけです。カードに書いていないことは1つも足しません（推測・一般論・注意書き・挨拶も足さない）。書き手の言葉はできるだけそのまま使います。追記の内容は、関係する見出しの中に入れます。マークダウンで、# タイトル、## 見出し、- 箇条書きにします。',
+    user: handoverText(cycle),
+    schema: MANUAL_SCHEMA,
+    effort: 'medium',
+  });
+  return res.manual;
+}
+
+export async function successorTest(provider, cycle, jobs, text = handoverText(cycle)) {
   const res = await provider.generate({
     system: 'あなたは今日この仕事を引き継いだ後任です。渡された引継ぎカードに書いてあることだけで判断し、推測で補いません。各仕事について、カードだけで対応できたら「できた」、判断できなければ「止まった」とし、根拠または止まった行をカードからそのまま引用します。止まったときは、カードに1行足すなら何が要るかを書きます。',
-    user: `${handoverText(cycle)}\n\n仕事:\n${jobs.map((j, i) => `${i + 1}. ${j}`).join('\n')}`,
+    user: `${text}\n\n仕事:\n${jobs.map((j, i) => `${i + 1}. ${j}`).join('\n')}`,
     schema: TEST_SCHEMA,
     effort: 'medium',
   });

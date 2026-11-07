@@ -277,9 +277,11 @@ export function applyHandover(book, input) {
     // 資料＋追記の形。資料は①の「いつもの流れ」から始め、止まった所を追記に書き足す。
     if (input.card.doc != null || input.card.extra != null) Object.assign(handover.card, { doc: String(input.card.doc ?? '').trim().slice(0, LIMIT.doc), extra: String(input.card.extra ?? '').trim().slice(0, LIMIT.doc) });
   }
+  if (input.manual != null) handover.manual = String(input.manual).trim().slice(0, LIMIT.doc * 2);
   if (input.jobs) handover.jobs = input.jobs.slice(0, 5).map((j) => String(j).slice(0, 200));
   if (input.test) handover.tests.push({
     at: new Date().toISOString(),
+    ...(input.source ? { source: input.source } : {}),
     stuck: input.test.filter((r) => r.result !== 'できた').length,
     results: input.test.map((r) => ({ job: String(r.job ?? ''), result: r.result === 'できた' ? 'できた' : '止まった', line: String(r.line ?? ''), why: String(r.why ?? ''), missing: String(r.missing ?? '') })),
   });

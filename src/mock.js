@@ -64,6 +64,7 @@ export function mockResponse({ schema, system = '', user }) {
   const keys = Object.keys(schema.properties);
   if (keys.includes('jobs')) return { jobs: JOBS.map(([job]) => job) };
   if (keys.includes('results')) return mockSuccessor(user);
+  if (keys.includes('manual')) return { manual: user };
   if (['items', 'quotes', 'recalls'].some((k) => keys.includes(k))) return mockStretch(keys, system, user);
   const lines = userLines(user);
   if (keys.includes('reply')) {

@@ -7,7 +7,7 @@ import { chooseProvider } from './providers.js';
 import { JsonStore } from './store.js';
 import * as notebook from '../plugin/skills/pdcaai/scripts/notebook.mjs';
 import { CARDS, finishStretch, startStretch } from './stretch.js';
-import { makeJobs, successorTest } from './handover.js';
+import { makeJobs, makeManual, successorTest } from './handover.js';
 import { randomUUID } from 'node:crypto';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -105,6 +105,21 @@ async function handoverRoute(provider, cycleId, body, io) {
   return { handover: cycle.handover };
 }
 
+// 引継ぎマニュアル。AIの清書を下書きとして返し、本人が直して確定したら、同じ仕事で後任AIテストをもう一度回す。
+async function manualRoute(provider, cycleId, body, io, confirm) {
+  const book = await io.load();
+  const cycle = book.cycles.find((c) => c.id === cycleId);
+  if (!cycle?.handover?.tests?.length) throw new InputError('先に、後任めんだこにカードを試してもらってください');
+  if (!confirm) notebook.applyHandover(book, { id: cycleId, manual: await makeManual(provider, cycle) });
+  else {
+    const manual = text(body.manual, 'マニュアル', notebook.LIMIT.doc * 2);
+    notebook.applyHandover(book, { id: cycleId, manual });
+    notebook.applyHandover(book, { id: cycleId, source: 'manual', test: await successorTest(provider, cycle, cycle.handover.jobs, manual) });
+  }
+  await io.save(book);
+  return { handover: cycle.handover };
+}
+
 const safeDecode = (v) => { try { return decodeURIComponent(v ?? ''); } catch { return ''; } };
 
 async function route(engine, req, res, providerName, hosted) {
@@ -118,11 +133,12 @@ async function route(engine, req, res, providerName, hosted) {
     const book = await bookIO(hosted, req.method === 'POST' ? await readJson(req) : {}).load();
     return send(res, 200, { cycles: book.cycles, stats: notebook.stats(book), hints: notebook.hints(book), lenses: notebook.LENSES, slots: notebook.HANDOVER, humanOnly: notebook.humanOnly(book), reunions: notebook.reunions(book) });
   }
-  const hm = pathname.match(/^\/api\/handover\/(c\d+)$/);
+  const hm = pathname.match(/^\/api\/handover\/(c\d+)(\/manual(\/test)?)?$/);
   if (req.method === 'POST' && hm) {
     const body = await readJson(req);
     const io = bookIO(hosted, body);
-    return send(res, 200, io.reply(await handoverRoute(engine.provider, hm[1], body, io)));
+    const out = hm[2] ? await manualRoute(engine.provider, hm[1], body, io, !!hm[3]) : await handoverRoute(engine.provider, hm[1], body, io);
+    return send(res, 200, io.reply(out));
   }
   if (req.method === 'POST' && pathname.startsWith('/api/stretch')) {
     const body = await readJson(req);

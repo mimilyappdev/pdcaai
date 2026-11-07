@@ -563,7 +563,7 @@ function tileTrees(cycles, lenses = {}) {
 // 引継ぎの木（B案）: 後任AIテストの記録から「止まった → 店長に聞いた → 書き足した → 次はできた」を場面ごとにたどる。
 // 下の1回目から上へ、書き足した回ごとに枝が伸びる。新しい記録は足さず、テスト結果（止まった理由・足りない1行・できた根拠）だけで組み立てる。
 function handoverTree(cycle) {
-  const tests = (cycle.handover?.tests ?? []).filter((t) => t.scenes !== 'unseen');
+  const tests = (cycle.handover?.tests ?? []).filter((t) => t.scenes !== 'unseen' && t.source !== 'manual');
   if (tests.length < 2) return null;
   const n = tests[0].results.length;
   // できた根拠の行のうち、いちばん新しい追記を「書き足した行」とみなす。
@@ -871,11 +871,12 @@ async function handoverView(cycleId) {
     // ○×を1つずつ点ける。
     last.results.forEach((r, i) => setTimeout(() => { grid.children[i].className = kind(r); }, 300 + i * 350));
     // 初めての場面（scenes: 'unseen'）で試した回は、同じ場面の推移と分けて並べる。before は同じ場面での人間とAIの前回の結果。
-    const seen = handover.tests.filter((t) => t.scenes !== 'unseen');
+    // マニュアルで試した回は、下のマニュアル欄に分けて出す。
+    const seen = handover.tests.filter((t) => t.scenes !== 'unseen' && t.source !== 'manual');
     const unseen = handover.tests.filter((t) => t.scenes === 'unseen');
     const trend = (list) => list.map((t) => t.stuck).join(' → ');
     results.replaceChildren(h('div', { class: 'card' },
-      h('h2', {}, `後任AIテスト ${handover.tests.length}回目`, last.scenes === 'unseen' ? '（初めての場面）' : ''),
+      h('h2', {}, `後任AIテスト ${handover.tests.length}回目`, last.scenes === 'unseen' ? '（初めての場面）' : last.source === 'manual' ? '（マニュアルで）' : ''),
       h('div', { class: 'stuck-big' }, h('b', {}, String(last.stuck)), h('span', {}, `/ ${last.results.length} で止まった`)),
       right(last) ? h('p', { class: 'right-stop' }, `うち ${right(last)} つは、止まって正しい場面（前任者に聞くのが正解）`) : null,
       seen.length > 1 ? h('p', { class: 'stuck-trend' }, `${unseen.length ? '同じ場面で ' : ''}止まった数 ${trend(seen)}`) : null,
@@ -890,6 +891,43 @@ async function handoverView(cycleId) {
         : last.stuck ? h('p', { class: 'muted' }, 'カードに書き足して、もう一度試してください。書くのはあなたの言葉です。') : h('p', {}, '後任役のAIは、このカードだけで全部の仕事ができました。'),
       h('p', {}, download)));
   };
+  // 引継ぎマニュアル: AIの清書を下書きにして、あなたが直して確定する。確定したら同じ仕事でもう一度試し、止まった数が変わらないかを見る。
+  const manualBox = h('section', { 'aria-live': 'polite' });
+  const renderManual = (handover) => {
+    const c = handover.card;
+    const original = (c.doc != null || c.extra != null ? [c.doc, c.extra] : slots.map((s) => c[s.key])).filter(Boolean).join('\n\n');
+    const make = h('button', { type: 'button', class: handover.manual ? 'ghost' : null, onclick: async () => {
+      manualBox.replaceChildren(thinking('清書係のめんだこが、並べ替えて整えています（30秒ほど）'));
+      try {
+        renderManual((await api(`handover/${cycleId}/manual`, {})).handover);
+      } catch (ex) {
+        manualBox.replaceChildren(h('p', { class: 'error', role: 'alert' }, ex.message));
+      }
+    } }, handover.manual ? '清書し直す' : 'マニュアルにする');
+    if (!handover.manual) {
+      manualBox.replaceChildren(h('div', { class: 'card' }, h('h2', {}, '引継ぎマニュアルにする'),
+        h('p', { class: 'muted' }, 'AIがするのは、並べ替え・見出し付け・言い回しの整えだけです。書いていないことは足しません。'), make));
+      return;
+    }
+    const area = h('textarea', { rows: 18, maxlength: 16000, value: handover.manual, 'aria-label': '整えた下書き' });
+    const tested = handover.tests.filter((t) => t.source === 'manual').at(-1);
+    const before = handover.tests.filter((t) => t.source !== 'manual' && t.scenes !== 'unseen').at(-1);
+    manualBox.replaceChildren(h('div', { class: 'card' },
+      h('h2', {}, '引継ぎマニュアル'),
+      h('p', { class: 'muted' }, '左があなたの文、右が整えた下書きです。右を直してから確定してください。'),
+      h('div', { class: 'manual-pair' },
+        h('div', {}, h('small', {}, 'あなたの文（資料＋追記）'), h('pre', { class: 'manual-src' }, original)),
+        h('div', {}, h('small', {}, '整えた下書き（直せます）'), area)),
+      tested ? h('p', { class: 'stuck-trend' }, `マニュアルで試した結果: ${tested.stuck} / ${tested.results.length} で止まった（カードのとき ${before?.stuck ?? '−'}）`) : null,
+      form(async () => {
+        manualBox.append(thinking('後任めんだこが、マニュアルだけを読んで同じ仕事を試しています（30秒ほど）'));
+        const out = await api(`handover/${cycleId}/manual/test`, { manual: area.value });
+        renderResults(out.handover);
+        renderManual(out.handover);
+      }, h('button', { type: 'submit' }, '確定して、後任めんだこに試してもらう')),
+      h('p', {}, make, ' ', h('a', { class: 'button ghost', download: `引継ぎマニュアル_${cycle.project}.md`, href: '#',
+        onclick: (e) => { e.currentTarget.href = URL.createObjectURL(new Blob([area.value], { type: 'text/markdown' })); } }, 'マニュアルを書き出す（.md）'))));
+  };
   show(
     h('h1', {}, `引継ぎカード: ${cycle.project}`),
     h('p', { class: 'lead' }, '①の資料を、後任めんだこがそのまま読んで、よくある仕事を試します。止まった所は「追記」に、あなたの言葉で書き足してください。'),
@@ -897,10 +935,13 @@ async function handoverView(cycleId) {
       results.replaceChildren(thinking('後任役のAIが、カードだけを読んで仕事を試しています（30秒ほど）'));
       const out = await api(`handover/${cycleId}`, { card: v });
       renderResults(out.handover);
+      renderManual(out.handover);
     }, rows[0], cycle.items.length ? h('p', {}, hintButton) : null, hints, rows[1], h('button', { type: 'submit' }, '後任めんだこに試してもらう')),
     results,
+    manualBox,
   );
   if (cycle.handover) renderResults(cycle.handover);
+  if (cycle.handover?.tests?.length) renderManual(cycle.handover);
 }
 
 function tabOf(hash) {
