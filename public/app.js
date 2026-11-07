@@ -867,7 +867,8 @@ async function stretchView() {
     document.querySelector('textarea[name=summary]').value = last.summary ?? '';
   };
   show(
-    h('h1', {}, '引継ぎサポートめんだこを呼ぶ'),
+    // 呼ぶ前から、ふつうのめんだこが横で待っている。絵がまだ無いときは出さない。
+    h('h1', { class: 'call-title' }, '引継ぎサポートめんだこを呼ぶ', h('img', { class: 'call-mendako', src: '/img/mendako-plain.png', alt: '', onerror: (e) => e.target.remove() })),
     last ? h('section', { class: 'card resume' }, h('h2', {}, `前回の題材: ${last.project}`, h('span', { class: 'muted' }, ` ${day(last.createdAt)}`)),
       h('p', { class: 'muted' }, '記録は残っています。続きから進めるか、同じ資料でもう一度めんだこを呼べます。'),
       h('p', {}, h('a', { class: 'button', href: `#/handover/${last.id}` }, '②引き継ぐの続きへ'), ' ', h('a', { class: 'button ghost', href: '#/notebook' }, '③伸びを見る'), ' ',

@@ -35,6 +35,9 @@ main.with-tree { max-width: 1240px; display: grid; grid-template-columns: minmax
 #app { min-width: 0; outline: none; }
 #tree[hidden] { display: none; }
 .manual-out { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.call-title { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.call-mendako { width: 72px; height: auto; animation: bob 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .call-mendako { animation: none; } }
 .resume { border-color: #9cc3a6; background: #f4faf5; }
 .manual-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 10px; }
 .manual-pair textarea { width: 100%; }
