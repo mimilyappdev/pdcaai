@@ -465,7 +465,7 @@ function drawGrowthTree(cycles, lenses) {
   scroller.scrollTop = scroller.scrollHeight;
 }
 
-const LEVEL_LABEL = { 2: '補助輪 強（見落とした例を出す）', 1: '補助輪 弱（観点名だけ）' };
+const LEVEL_LABEL = { 2: 'めんだこのサポート 強（見落とした例を出す）', 1: 'めんだこのサポート 弱（観点名だけ）' };
 const WHEEL_LABEL = { 2: '強', 1: '弱', 0: '外れた' };
 const day = (iso) => new Date(iso).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
 
@@ -477,7 +477,7 @@ function growthTable(stats, lenses, reunions) {
     ['ヒントのあとに広がった、自分だけの考え', (s) => s.spread],
     ['前に見落とした型を、ヒントなしで出せた', (s) => (s.recallBase ? `${s.recalled} / ${s.recallBase}` : '-')],
     ['AIだけが出した（見落とし）', (s) => s.ai],
-    ...Object.entries(lenses).map(([lens, name]) => [`補助輪: ${name}`, (s) => WHEEL_LABEL[s.wheels[lens]] ?? '-']),
+    ...Object.entries(lenses).map(([lens, name]) => [`サポート: ${name}`, (s) => WHEEL_LABEL[s.wheels[lens]] ?? '-']),
     ['後任AIテストで止まった数', (s) => (s.stuck.length ? s.stuck.join('→') : '-')],
     ['考える力の手応え', (s) => (s.feel == null ? '-' : FEEL.find(([v]) => v === s.feel)[1])],
   ];
@@ -490,7 +490,7 @@ function growthTable(stats, lenses, reunions) {
     if (last.recalled > 0) grew.push(`前に見落とした型を ${last.recallBase}個中 ${last.recalled}個、自分で出せた`);
     if (last.ai < first.ai) grew.push(`見落とし ${first.ai} → ${last.ai}`);
     const off = Object.entries(lenses).filter(([lens]) => first.wheels[lens] != null && last.wheels[lens] < first.wheels[lens]).map(([, name]) => name);
-    if (off.length) grew.push(`補助輪が軽くなった: ${off.join('・')}`);
+    if (off.length) grew.push(`めんだこのサポートが軽くなった: ${off.join('・')}`);
   }
   return h('section', { class: 'card' },
     h('h2', {}, `${stats.length}周の伸び`),
@@ -686,9 +686,10 @@ function manualFile(md, format) {
   if (format === 'txt') return new Blob([lines.map((l) => l.replace(/^#+\s*/, '').replace(/^(\s*)[-*]\s+/, '$1・').replace(/\*\*/g, '')).join('\r\n')], { type: 'text/plain' });
   const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const para = (line) => {
-    const m = line.match(/^(#+)\s*(.*)$/);
-    const text = esc((m ? m[2] : line.replace(/^(\s*)[-*]\s+/, '$1・')).replace(/\*\*/g, ''));
-    const size = m ? [36, 30, 26][Math.min(m[1].length, 3) - 1] : 22;
+    // 見出しは「■」で始まる行（前の形の # も見出しとして扱う）。1行目はタイトル。
+    const m = line.match(/^(#+|■)\s*(.*)$/) ?? (line === lines[0] && line ? [line, '#', line] : null);
+    const text = esc((m ? (m[1] === '■' ? `■ ${m[2]}` : m[2]) : line.replace(/^(\s*)[-*]\s+/, '$1・')).replace(/\*\*/g, ''));
+    const size = m ? (m[1] === '■' ? 28 : [36, 30, 26][Math.min(m[1].length, 3) - 1]) : 22;
     return `<w:p><w:r><w:rPr>${m ? '<w:b/>' : ''}<w:sz w:val="${size}"/></w:rPr><w:t xml:space="preserve">${text}</w:t></w:r></w:p>`;
   };
   const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
@@ -719,7 +720,7 @@ function manualSection(cycle, slots) {
         h('p', { class: 'muted' }, 'AIがするのは、並べ替え・見出し付け・言い回しの整えだけです。書いていないことは足しません。'), make));
       return;
     }
-    const format = h('select', { 'aria-label': '書き出す形式' }, [['md', 'Markdown（.md）'], ['txt', 'テキスト（.txt）'], ['docx', 'Word（.docx）']].map(([v, t]) => h('option', { value: v }, t)));
+    const format = h('select', { 'aria-label': '書き出す形式' }, [['docx', 'Word（.docx）'], ['txt', 'テキスト（.txt）'], ['md', 'Markdown（.md）']].map(([v, t]) => h('option', { value: v }, t)));
     const area = h('textarea', { rows: 18, maxlength: 16000, value: handover.manual, 'aria-label': '整えた下書き' });
     const tested = handover.tests.filter((t) => t.source === 'manual').at(-1);
     const before = handover.tests.filter((t) => t.source !== 'manual' && t.scenes !== 'unseen').at(-1);
@@ -753,7 +754,7 @@ async function notebookView() {
   const pctText = (v) => (v == null ? '-' : `${v}%`);
   show(
     h('h1', {}, '伸びを見る'),
-    h('p', { class: 'lead' }, '自分で先に出した検討事項と、AI社員だけが出したものの記録です。自分で出せるようになった観点から、ヒント（補助輪）が外れていきます。'),
+    h('p', { class: 'lead' }, '自分で先に出した検討事項と、AI社員だけが出したものの記録です。自分で出せるようになった観点から、めんだこ達のサポート（ヒント）が外れていきます。'),
     cycles.length ? null : h('p', { class: 'muted' }, 'まだ記録はありません。Claude Code で pdcaai スキルを使うと、ここに積まれます。'),
     cycles.length ? tileTrees(cycles, lenses) : null,
     ...cycles.map(handoverTree),
@@ -777,10 +778,10 @@ async function notebookView() {
       h('p', { class: 'muted' }, 'AI社員4人の誰も出さなかった、あなたの考えです。後任AIテストの仕事づくりに使います。'),
       h('ul', { class: 'list note-own' }, humanOnly.map((x) => h('li', {}, x.text, h('div', { class: 'muted' }, x.project))))) : null,
     h('section', { class: 'card' },
-      h('h2', {}, '補助輪の状態'),
+      h('h2', {}, 'めんだこ達のサポート'),
       hints.length
         ? h('ul', { class: 'list' }, hints.map((x) => h('li', {}, h('b', {}, x.name), ` ${LEVEL_LABEL[x.level]}`, h('div', { class: 'muted' }, `この観点で自分で出せた割合 ${x.selfRate}%`))))
-        : h('p', { class: 'muted' }, cycles.length ? '補助輪が必要な観点はありません。' : '初回はヒントなしで始めます。')),
+        : h('p', { class: 'muted' }, cycles.length ? 'サポートが必要な観点はありません。' : '初回はヒントなしで始めます。')),
     h('p', {}, h('a', { class: 'button ghost', href: '#/' }, '考えるへ')),
   );
 }
