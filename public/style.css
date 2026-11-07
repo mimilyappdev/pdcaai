@@ -47,6 +47,7 @@ main.with-tree { max-width: 1240px; display: grid; grid-template-columns: minmax
 .manual-diff tr.changed { background: #fff4e5; }
 .manual-diff th:nth-child(2), .manual-diff td:nth-child(2) { white-space: nowrap; }
 .manual-out { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.manual-out select { display: inline-block; width: auto; margin-top: 0; }
 .call-title { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .call-mendako { width: 72px; height: auto; animation: bob 1.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .call-mendako { animation: none; } }
