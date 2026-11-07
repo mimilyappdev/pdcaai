@@ -731,6 +731,19 @@ function manualSection(cycle, slots) {
         h('div', {}, h('small', {}, 'あなたの文（資料＋追記）'), h('pre', { class: 'manual-src' }, original)),
         h('div', {}, h('small', {}, '整えた下書き（直せます）'), area)),
       tested ? h('p', { class: 'stuck-trend' }, `マニュアルで試した結果: ${tested.stuck} / ${tested.results.length} で止まった（カードのとき ${before?.stuck ?? '−'}）`) : null,
+      // 仕事ごとに、カードのときとマニュアルのときを並べる。結果が変わった仕事は、止まった理由と足りない1行まで出す。
+      tested ? h('table', { class: 'manual-diff' },
+        h('thead', {}, h('tr', {}, h('th', {}, '仕事'), h('th', {}, 'カードのとき'), h('th', {}, 'マニュアルのとき'))),
+        h('tbody', {}, tested.results.map((r, i) => {
+          const was = before?.results[i];
+          const changed = was && was.result !== r.result;
+          return h('tr', { class: changed ? 'changed' : null }, h('td', {}, r.job),
+            h('td', { class: was?.result === 'できた' ? 'pass' : 'stuck' }, was?.result ?? '−'),
+            h('td', { class: r.result === 'できた' ? 'pass' : 'stuck' }, r.result,
+              r.result !== 'できた' ? h('div', { class: 'muted' }, `止まった: ${r.why}`) : null,
+              r.missing ? h('div', {}, `足りない1行: ${r.missing}`) : null));
+        }))) : null,
+      tested && tested.stuck !== before?.stuck ? h('p', { class: 'muted' }, '結果が変わった仕事は、整えたときに言葉が抜けたか、読み方が分かれた所です。右の下書きを直して、もう一度試せます。') : null,
       form(async () => {
         manualBox.append(thinking('後任めんだこが、マニュアルだけを読んで同じ仕事を試しています（30秒ほど）'));
         const out = await api(`handover/${cycleId}/manual/test`, { manual: area.value });
