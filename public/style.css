@@ -12,15 +12,18 @@
   --seal: #2c3a33;
   --seal-ink: #efe9da;
   --ok: #2d6a4f;
+  --round: "Zen Maru Gothic", "Yu Gothic UI", "Hiragino Maru Gothic ProN", sans-serif;
+  --radius: 12px;
 }
 * { box-sizing: border-box; }
 body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: "Yu Gothic UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  font-family: "Noto Sans JP", "Yu Gothic UI", "Hiragino Sans", sans-serif;
   font-size: 16px;
-  line-height: 1.75;
+  line-height: 1.8;
+  letter-spacing: .02em;
 }
 .top { display: flex; align-items: center; gap: 16px; padding: 8px 20px; background: var(--accent); color: var(--accent-ink); flex-wrap: wrap; }
 .brand img { display: block; height: 44px; width: auto; }
@@ -45,7 +48,7 @@ main.with-tree { max-width: 1240px; display: grid; grid-template-columns: minmax
 .call-title { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .call-mendako { width: 72px; height: auto; animation: bob 1.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .call-mendako { animation: none; } }
-.resume { border-color: #9cc3a6; background: #f4faf5; }
+.card.resume { border-color: #9cc3a6; background: #f4faf5; }
 .manual-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 10px; }
 .manual-pair textarea { width: 100%; }
 .manual-src { margin: 0; white-space: pre-wrap; max-height: 430px; overflow: auto; background: #faf8f2; border: 1px solid var(--line); border-radius: 8px; padding: 10px; font-family: inherit; font-size: 13px; line-height: 1.6; }
@@ -88,29 +91,33 @@ main.with-tree { max-width: 1240px; display: grid; grid-template-columns: minmax
   #tree { position: static; width: 100%; max-height: none; }
   .tree-scroll { max-height: 42vh; }
 }
-h1 { font-size: 30px; line-height: 1.4; margin: 0 0 12px; white-space: pre-line; }
-h2 { font-size: 21px; line-height: 1.5; margin: 0 0 10px; }
+/* 見出しとボタンは丸ゴシック。めんだこのやわらかさに合わせる。 */
+h1, h2, h3, button, .button, .tabs a, .stuck-big b { font-family: var(--round); }
+h1 { font-size: 30px; font-weight: 700; line-height: 1.4; margin: 0 0 14px; white-space: pre-line; }
+h2 { font-size: 21px; font-weight: 700; line-height: 1.5; margin: 0 0 10px; }
 h3 { font-size: 16px; margin: 0 0 4px; }
 p { margin: 0 0 12px; }
 .lead { color: var(--sub); }
 .steps { display: flex; gap: 6px; margin: 0 0 26px; padding: 0; list-style: none; }
 .steps li { flex: 1; border-top: 3px solid var(--line); padding-top: 4px; color: var(--sub); font-size: 13px; font-weight: 700; }
 .steps li.on { border-color: var(--accent); color: var(--ink); }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 18px; margin: 0 0 14px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; margin: 0 0 16px; box-shadow: 0 1px 0 #0000000a; }
 label { display: block; margin: 0 0 16px; font-weight: 700; }
 label small { display: block; color: var(--sub); font-weight: 400; }
 input[type=text], input[type=date], textarea, select {
   display: block; width: 100%; margin-top: 6px; padding: 10px 12px; font: inherit; font-weight: 400;
-  color: inherit; background: #fff; border: 1px solid #b9b3a4; border-radius: 6px;
+  color: inherit; background: #fff; border: 1px solid #c9c2b2; border-radius: 10px;
 }
 textarea { min-height: 96px; resize: vertical; }
 input[type=range] { width: 100%; accent-color: var(--accent); margin-top: 8px; }
 button, .button {
   display: inline-block; min-height: 44px; padding: 9px 20px; font: inherit; font-weight: 700;
-  color: var(--accent-ink); background: var(--accent); border: 0; border-radius: 6px; cursor: pointer; text-decoration: none;
+  color: var(--accent-ink); background: var(--accent); border: 0; border-radius: 99px; cursor: pointer; text-decoration: none;
+  padding-inline: 24px; box-shadow: 0 2px 0 var(--accent-dark); transition: transform .1s, box-shadow .1s;
 }
+button:not(:disabled):active, .button:active { transform: translateY(2px); box-shadow: none; }
 button:disabled { opacity: .5; cursor: default; }
-button.ghost, .button.ghost { color: var(--ink); background: transparent; border: 1px solid #b9b3a4; }
+button.ghost, .button.ghost { color: var(--ink); background: #fff; border: 1.5px solid #c9c2b2; box-shadow: none; }
 :focus-visible { outline: 3px solid #1d5fa8; outline-offset: 2px; }
 .error { color: #a4161a; font-weight: 700; }
 .who { display: inline-block; font-size: 13px; font-weight: 700; color: var(--accent); }
