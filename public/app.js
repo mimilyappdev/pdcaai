@@ -702,19 +702,65 @@ function stretchCard(card, back) {
         back ?? null)));
 }
 
+// .docx は zip なので、本文（word/document.xml）だけをブラウザの中で取り出して段落ごとの文にする。
+async function docxText(buf) {
+  const v = new DataView(buf);
+  const u8 = new Uint8Array(buf);
+  let end = buf.byteLength - 22;
+  while (end >= 0 && v.getUint32(end, true) !== 0x06054b50) end--;
+  if (end < 0) throw new Error('Wordのファイルを読めませんでした');
+  let p = v.getUint32(end + 16, true);
+  for (let i = v.getUint16(end + 10, true); i > 0; i--) {
+    const nameLen = v.getUint16(p + 28, true);
+    const name = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nameLen));
+    if (name === 'word/document.xml') {
+      const local = v.getUint32(p + 42, true);
+      const start = local + 30 + v.getUint16(local + 26, true) + v.getUint16(local + 28, true);
+      const raw = u8.subarray(start, start + v.getUint32(p + 20, true));
+      const data = v.getUint16(p + 10, true) === 0 ? raw
+        : await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+      const xml = new DOMParser().parseFromString(new TextDecoder().decode(data), 'application/xml');
+      return [...xml.getElementsByTagNameNS('*', 'p')].map((para) => [...para.getElementsByTagNameNS('*', 't')].map((t) => t.textContent).join('')).join('\n').trim();
+    }
+    p += 46 + nameLen + v.getUint16(p + 30, true) + v.getUint16(p + 32, true);
+  }
+  throw new Error('Wordのファイルに本文が見つかりませんでした');
+}
+
+// 資料の文を貼る欄と、ファイルから読み込むボタン。読み込んだ文は欄に入るので、送る前に見て直せる。
+function docField(label, name, max) {
+  const area = h('textarea', { name, rows: 8, maxlength: max });
+  const status = h('small', { class: 'muted', 'aria-live': 'polite' });
+  const pick = h('input', { type: 'file', accept: '.txt,.md,.docx', hidden: true, onchange: async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const text = file.name.toLowerCase().endsWith('.docx') ? await docxText(await file.arrayBuffer()) : await file.text();
+      area.value = text.slice(0, max);
+      status.textContent = `${file.name} を読み込みました${text.length > max ? `（${max}字までにしました）` : ''}`;
+    } catch (ex) {
+      status.textContent = ex.message;
+    }
+    e.target.value = '';
+  } });
+  return h('label', {}, label, h('small', {}, '文章を貼り付けるか、ファイルを読み込みます（.txt .md .docx）'), area,
+    h('span', { class: 'doc-pick' }, h('button', { type: 'button', class: 'ghost', onclick: () => pick.click() }, '資料をアップロード'), pick, status));
+}
+
 function stretchView() {
   setChain([]);
   show(
     h('h1', {}, 'ストレッチャーを呼ぶ'),
-    h('p', { class: 'lead' }, '「これで完璧！」と思ったら、AI社員4人を呼びます。先に自分で「足りないもの」を考えてから、カードをめくります。'),
+    h('p', { class: 'lead' }, 'PDCAIで引き継ぎの抜け漏れを防いで、思考力を上げよう！'),
+    h('p', {}, '「資料できた！」と思ったら、めんだこAI達を呼びます。自分でも足りないものを考えて、仕事を引き継いだめんだこ達がこの資料で動けたか見てみましょう。'),
     form(async (v) => {
       app.append(thinking('めんだこたちが集まっています'));
       const input = { project: v.project, summary: v.summary, confidenceBefore: Number(v.confidence) };
       const st = { ...await api('stretch', input), input };
       stretchThink(st);
     },
-    field('作るもの・始めること', 'project', { hint: '一言で' }),
-    h('label', {}, '説明（なくても大丈夫です）', h('textarea', { name: 'summary', rows: 3, maxlength: 500 })),
+    field('作るもの', 'project', { hint: '例：カフェの予約の方法' }),
+    docField('いつもの流れ', 'summary', 8000),
     percentField('今の自信（%）', 'confidence', 80, 0),
     h('button', { type: 'submit' }, 'ストレッチャー登場')),
   );
@@ -722,7 +768,7 @@ function stretchView() {
 
 function stretchThink(st) {
   show(
-    h('h1', {}, 'いま足りないのって、なんや？'),
+    h('h1', {}, '本当にこれで引き継げるのかな？'),
     h('p', { class: 'lead' }, '4人のカードを見て、思いついたことを書いてください。1行に1つ。なければ空のままで大丈夫です。'),
     thinking('めんだこたちも、裏で考え中'),
     h('div', { class: 'stretch-grid' }, st.cards.map((c) => stretchCard(c))),
@@ -839,7 +885,7 @@ async function handoverView(cycleId) {
       results.replaceChildren(thinking('後任役のAIが、カードだけを読んで仕事を試しています（30秒ほど）'));
       const out = await api(`handover/${cycleId}`, { card: v });
       renderResults(out.handover);
-    }, ...rows, h('button', { type: 'submit' }, '後任AIに試してもらう')),
+    }, ...rows, h('button', { type: 'submit' }, '後任めんだこに試してもらう')),
     results,
   );
   if (cycle.handover) renderResults(cycle.handover);

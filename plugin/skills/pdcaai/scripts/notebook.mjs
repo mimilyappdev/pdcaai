@@ -14,7 +14,7 @@ export const LENSES = {
 };
 
 const WINDOW = 3;
-const LIMIT = { text: 500, items: 30 };
+export const LIMIT = { text: 500, doc: 8000, items: 30 };
 
 export function notebookPath() {
   return process.env.PDCAAI_NOTEBOOK || join(homedir(), '.pdcaai', 'notebook.json');
@@ -190,7 +190,7 @@ export function buildCycle(input, book, now = new Date()) {
     id: `c${book.cycles.length + 1}`,
     createdAt: now.toISOString(),
     project: str(input.project, '作るもの', 200),
-    summary: String(input.summary ?? '').slice(0, LIMIT.text),
+    summary: String(input.summary ?? '').slice(0, LIMIT.doc),
     confidenceBefore: pct(input.confidenceBefore, '最初の自信'),
     confidenceAfter: null,
     // スキル（文字）で回したか、カード画面で回したか。考える力の手応えを比べるために残す。

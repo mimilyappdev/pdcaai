@@ -56,13 +56,16 @@ const text = (v, name, max) => {
   return s.slice(0, max);
 };
 
+// 「ない」「ありません」「特になし」のような行は、考えを書いたのではないので数えない。
+const nothing = (s) => /^(特に)?(な[いし]|ないです|ありません|何もない|なにもない|思いつかない|わからない|分からない)$/.test(s.replace(/[\s!！?？。、.,…~〜ーｗw]/g, ''));
+
 async function stretchRoute(provider, pathname, body, io, hosted) {
   const m = pathname.match(/^\/api\/stretch(?:\/([\w-]+)\/(answer|feel))?$/);
   if (!m) throw new InputError('見つかりません');
   const [, id, action] = m;
   if (!id) {
     const project = text(body.project, '作るもの', 200);
-    const summary = String(body.summary ?? '').trim().slice(0, 500);
+    const summary = String(body.summary ?? '').trim().slice(0, notebook.LIMIT.doc);
     const confidenceBefore = Number(body.confidenceBefore);
     if (!Number.isInteger(confidenceBefore) || confidenceBefore < 0 || confidenceBefore > 100) throw new InputError('自信は0〜100で入れてください');
     const sid = randomUUID();
@@ -74,8 +77,8 @@ async function stretchRoute(provider, pathname, body, io, hosted) {
   const st = hosted ? { ...body.stretch } : stretches.get(id);
   if (!st) throw new InputError('この回は見つかりません。最初からやり直してください');
   if (action === 'answer') {
-    const own = (Array.isArray(body.own) ? body.own : []).map((s) => String(s).trim()).filter(Boolean).slice(0, 30);
-    if (hosted) Object.assign(st, { project: text(st.project, '作るもの', 200), summary: String(st.summary ?? '').slice(0, 500), confidenceBefore: Number(st.confidenceBefore) || 0, pending: startStretch(provider, book, st) });
+    const own = (Array.isArray(body.own) ? body.own : []).map((s) => String(s).trim()).filter((s) => s && !nothing(s)).slice(0, 30);
+    if (hosted) Object.assign(st, { project: text(st.project, '作るもの', 200), summary: String(st.summary ?? '').slice(0, notebook.LIMIT.doc), confidenceBefore: Number(st.confidenceBefore) || 0, pending: startStretch(provider, book, st) });
     const cycle = await finishStretch(provider, book, { ...st, own });
     book.cycles.push(cycle);
     await io.save(book);
