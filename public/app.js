@@ -846,6 +846,17 @@ async function handoverView(cycleId) {
       oninput: (e) => box.replaceChildren(e.target.value.trim() ? '' : nudge(slot)) });
     return h('label', { class: 'slot' }, slot.heading, area, box);
   });
+  // 書く手が止まったときに、①でめんだこが出した指摘を見返すためのヒント。押すまでは隠しておく。
+  const hints = h('section', { class: 'card hint-box', hidden: true },
+    Object.entries(lenses).map(([lens, name]) => {
+      const items = cycle.items.filter((i) => i.lens === lens);
+      return items.length ? h('div', { class: `hint-lens lens-${lens}` }, mendako(lens, 48), h('div', {}, h('b', {}, name),
+        h('ul', { class: 'list' }, items.map((i) => h('li', { class: `note-${i.status}` }, h('small', {}, ITEM_LABEL[i.status]), ' ', i.item))))) : null;
+    }));
+  const hintButton = h('button', { type: 'button', class: 'ghost', onclick: () => {
+    hints.hidden = !hints.hidden;
+    hintButton.textContent = hints.hidden ? 'ヒントを出す（①のめんだこの指摘）' : 'ヒントをしまう';
+  } }, 'ヒントを出す（①のめんだこの指摘）');
   const results = h('section', { 'aria-live': 'polite' });
   const renderResults = (handover) => {
     const last = handover.tests.at(-1);
@@ -881,6 +892,8 @@ async function handoverView(cycleId) {
   show(
     h('h1', {}, `引継ぎカード: ${cycle.project}`),
     h('p', { class: 'lead' }, '6つの欄を、あなたの言葉で埋めます。空いている欄は、担当のめんだこが声をかけます。書けたら、後任役のAIがこのカードだけを読んで、よくある仕事を試します。'),
+    cycle.items.length ? h('p', {}, hintButton) : null,
+    hints,
     form(async (v) => {
       results.replaceChildren(thinking('後任役のAIが、カードだけを読んで仕事を試しています（30秒ほど）'));
       const out = await api(`handover/${cycleId}`, { card: v });
