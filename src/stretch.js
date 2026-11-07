@@ -43,7 +43,10 @@ export async function lensPrompt(lens) {
 export async function runLenses(provider, description, seen = []) {
   const already = seen.length ? `\n\n前回までに出た項目（同じ論点は出さないでください）:\n${seen.map((s) => `- ${s}`).join('\n')}` : '';
   const out = await Promise.all(Object.keys(LENSES).map(async (lens) => {
-    const res = await provider.generate({ system: await lensPrompt(lens), user: `作るものの説明:\n「${description}」${already}`, schema: ITEMS_SCHEMA, effort: 'low', model: LENS_MODEL });
+    // 4人は並列で見るので、ほかの立場と重なる論点を避け、当てはまらなければ無理に出さないよう伝える。
+    const others = Object.entries(LENSES).filter(([k]) => k !== lens).map(([, name]) => name).join('・');
+    const note = `\n\nほかに${others}も同時に見ています。その人たちの担当と重なる論点は出さず、あなたの立場でしか気づけない所を優先してください。あなたの立場に当てはまる問題がなければ、無理に出さず少なくてかまいません（0件でもよい）。`;
+    const res = await provider.generate({ system: await lensPrompt(lens), user: `作るものの説明:\n「${description}」${already}${note}`, schema: ITEMS_SCHEMA, effort: 'low', model: LENS_MODEL });
     return res.items.slice(0, 3).map((it) => ({ lens, ...it }));
   }));
   return out.flat();

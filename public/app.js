@@ -722,6 +722,11 @@ function manualSection(cycle, slots) {
     }
     const format = h('select', { 'aria-label': '書き出す形式' }, [['docx', 'Word（.docx）'], ['txt', 'テキスト（.txt）'], ['md', 'Markdown（.md）']].map(([v, t]) => h('option', { value: v }, t)));
     const area = h('textarea', { rows: 18, maxlength: 16000, value: handover.manual, 'aria-label': '整えた下書き' });
+    // 清書で落ちたかもしれない行。元の行の頭10文字（記号と空白を除く）が下書きに無いものを出す。言い換えた行も出るので「かもしれない」とする。
+    const plain = (t) => t.replace(/[\s・\-*#■【】「」『』（）()、。,.:：!！?？]/g, '');
+    const draft = plain(handover.manual);
+    const dropped = original.split('\n').map((l) => l.trim()).filter((l) => plain(l).length >= 6 && !/^【.*】$/.test(l))
+      .filter((l) => !draft.includes(plain(l).slice(0, 10)));
     const tested = handover.tests.filter((t) => t.source === 'manual').at(-1);
     const before = handover.tests.filter((t) => t.source !== 'manual' && t.scenes !== 'unseen').at(-1);
     manualBox.replaceChildren(h('div', { class: 'card' },
@@ -730,7 +735,11 @@ function manualSection(cycle, slots) {
       h('div', { class: 'manual-pair' },
         h('div', {}, h('small', {}, 'あなたの文（資料＋追記）'), h('pre', { class: 'manual-src' }, original)),
         h('div', {}, h('small', {}, '整えた下書き（直せます）'), area)),
+      dropped.length ? h('div', { class: 'card dropped' }, h('b', {}, `下書きに入っていないかもしれない行（${dropped.length}）`),
+        h('p', { class: 'muted' }, '言い換えられただけのこともあります。抜けていたら、右の下書きに足してから確定してください。'),
+        h('ul', { class: 'list' }, dropped.map((l) => h('li', {}, l)))) : null,
       tested ? h('p', { class: 'stuck-trend' }, `マニュアルで試した結果: ${tested.stuck} / ${tested.results.length} で止まった（カードのとき ${before?.stuck ?? '−'}）`) : null,
+      tested ? h('p', { class: 'muted' }, '止まった数がほぼ同じなら、清書で中身は変わっていない目安です。仕事ごとに1回ずつ試すので、読み方で1つくらい揺れることがあります。') : null,
       // 仕事ごとに、カードのときとマニュアルのときを並べる。結果が変わった仕事は、止まった理由と足りない1行まで出す。
       tested ? h('table', { class: 'manual-diff' },
         h('thead', {}, h('tr', {}, h('th', {}, '仕事'), h('th', {}, 'カードのとき'), h('th', {}, 'マニュアルのとき'))),
@@ -741,7 +750,7 @@ function manualSection(cycle, slots) {
             h('td', { class: was?.result === 'できた' ? 'pass' : 'stuck' }, was?.result ?? '−'),
             h('td', { class: r.result === 'できた' ? 'pass' : 'stuck' }, r.result,
               r.result !== 'できた' ? h('div', { class: 'muted' }, `止まった: ${r.why}`) : null,
-              r.missing ? h('div', {}, `足りない1行: ${r.missing}`) : null));
+              r.missing ? h('div', {}, `あなたが決めること: ${r.missing}`) : null));
         }))) : null,
       tested && tested.stuck !== before?.stuck ? h('p', { class: 'muted' }, '結果が変わった仕事は、整えたときに言葉が抜けたか、読み方が分かれた所です。右の下書きを直して、もう一度試せます。') : null,
       form(async () => {
@@ -1022,7 +1031,7 @@ async function handoverView(cycleId) {
       h('ul', { class: 'list test-results' }, last.results.map((r) => h('li', { class: kind(r) },
         h('small', {}, kind(r) === 'ask' ? '止まった（正しい：前任者に聞く）' : r.result), h('div', {}, r.job),
         h('div', { class: 'muted' }, r.result === 'できた' ? `根拠: ${r.line}` : `止まった: ${r.why}`),
-        r.missing ? h('div', {}, `足りない1行: ${r.missing}`) : null))),
+        r.missing ? h('div', {}, `あなたが決めること: ${r.missing}`) : null))),
       last.stuck && last.stuck === right(last) ? h('p', {}, '残りは、前任者に聞くのが正しい場面です。カードで決めることは、ここまでです。')
         : last.stuck ? h('p', { class: 'muted' }, 'カードに書き足して、もう一度試してください。書くのはあなたの言葉です。') : h('p', {}, '後任役のAIは、このカードだけで全部の仕事ができました。'),
       h('p', {}, download, ' ', h('a', { class: 'button', href: '#/notebook' }, '③伸びを見るで、マニュアルにする'))));
