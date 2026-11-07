@@ -550,9 +550,10 @@ function tileTrees(cycles, lenses = {}) {
       return h('div', { class: 'tt-tree' },
         h('div', { class: 'tt-head' }, `${ci + 1}周目`, h('span', { class: 'muted' }, ` ${day(c.createdAt)}`)),
         h('div', { class: 'tt-apple', style: `animation-delay:${top + 0.2}s` }, '🍏', h('small', {}, `自分で見つけた ${c.own.filter((o) => o.phase !== 'hint').length}／AIの指摘に答えた ${c.own.filter((o) => o.phase === 'hint').length}`)),
-        buds.length ? h('div', { class: 'tt-buds', style: `animation-delay:${top + 0.5}s` },
+        // 芽の枠は最初から出しておく（後から出すと、木が伸びる間ずっと上が空いて見える）。
+        buds.length ? h('div', { class: 'tt-buds' },
           h('small', {}, h('b', {}, `🌱 芽＝めんだこだけが見た所 ${buds.length}`), '（あなたはまだ出せていない。次に考える所）'),
-          buds.map((i, k) => h('div', { class: 'tt-bud', title: i.item, style: `animation-delay:${top + 0.7 + k * 0.12}s` }, icon(i.lens), h('span', {}, i.item)))) : null,
+          buds.map((i) => h('div', { class: 'tt-bud', title: i.item }, icon(i.lens), h('span', {}, i.item)))) : null,
         h('p', { class: 'tt-zone' }, h('b', {}, '🍃 葉＝あなたが先に考えたこと'), `（1枚＝1行、${c.own.length}枚）`),
         h('div', { class: 'tt-stack' }, h('span', { class: 'tt-trunk', 'aria-hidden': 'true', style: `--d:${start}s;--len:${Math.max(c.own.length, 1) * STEP}s` }), rows.reverse()),
         h('div', { class: 'tt-root' }, h('small', {}, '根＝題材'), c.project));
