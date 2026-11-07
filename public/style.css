@@ -280,11 +280,8 @@ main.wide { max-width: 1240px; }
 .tt-pair > .tt-tile:first-child .tt-branch { right: -30px; transform-origin: 100% 50%; --tilt: -28deg; }
 .tt-pair > .tt-tile:last-child:not(:first-child) .tt-branch { left: -30px; transform-origin: 0 50%; --tilt: 28deg; }
 .tt-pair > .tt-tile:only-child .tt-branch { display: none; }
-/* 葉: 枝の先で小さくふくらんでから開く。 */
-.tt-leaf { position: absolute; top: calc(55% - 26px); z-index: 1; width: 24px; height: 15px; border-radius: 85% 0 85% 0; border: 2px solid var(--leaf); background: var(--leaf-bg); animation: unfurl .7s cubic-bezier(.3,1.4,.5,1) both; animation-delay: calc(var(--d) + .2s); }
-.tt-pair > .tt-tile:first-child .tt-leaf { right: -14px; transform-origin: 100% 100%; }
-.tt-pair > .tt-tile:last-child:not(:first-child) .tt-leaf { left: -14px; transform-origin: 0 100%; scale: -1 1; }
-.tt-pair > .tt-tile:only-child .tt-leaf { top: auto; bottom: -12px; left: calc(50% - 12px); right: auto; }
+/* 芽: 自分で考えた1行の左上に、カードと一緒にぴょこっと出る。 */
+.tt-sprout { position: absolute; z-index: 2; left: -10px; top: -12px; font-size: 20px; line-height: 1; transform-origin: 50% 100%; animation: sprout .5s cubic-bezier(.3,1.6,.5,1) both; animation-delay: calc(var(--d) + .55s); }
 .tt-tile.self { --leaf: #009E73; --leaf-bg: #e3f0e8; }
 .tt-tile.answered { --leaf: #B84E26; --leaf-bg: #F6DCCB; }
 .tt-sq, .tt-ask, .tt-same { animation: pop .4s ease-out both; animation-delay: calc(var(--d) + .4s); }
@@ -307,10 +304,11 @@ main.wide { max-width: 1240px; }
 @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.9); } to { opacity: 1; transform: none; } }
 /* 葉: 小さな芽がふくらんでから、ひらく。 */
 @keyframes unfurl { 0% { transform: scale(0) rotate(-40deg); } 35% { transform: scale(.28) rotate(-40deg); } 100% { transform: rotate(-6deg); } }
+@keyframes sprout { from { transform: scale(0); } to { transform: none; } }
 @keyframes grow-up { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 @keyframes grow-x { from { transform: rotate(var(--tilt, 0deg)) scaleX(0); } to { transform: rotate(var(--tilt, 0deg)) scaleX(1); } }
 .tt-bud { animation: pop .4s ease-out both; }
-@media (prefers-reduced-motion: reduce) { .tt-tile, .tt-sq, .tt-ask, .tt-same, .tt-leaf, .tt-trunk, .tt-branch, .tt-apple, .tt-buds, .tt-bud { animation: none; } .tt-branch { transform: rotate(var(--tilt, 0deg)); } }
+@media (prefers-reduced-motion: reduce) { .tt-tile, .tt-sq, .tt-ask, .tt-same, .tt-sprout, .tt-trunk, .tt-branch, .tt-apple, .tt-buds, .tt-bud { animation: none; } .tt-branch { transform: rotate(var(--tilt, 0deg)); } }
 .right-stop { color: #4F6D8F; font-weight: 700; margin-top: 0; }
 
 /* 引継ぎの木（B案） */

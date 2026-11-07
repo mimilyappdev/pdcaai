@@ -542,7 +542,7 @@ function tileTrees(cycles, lenses = {}) {
         const answered = o.phase === 'hint';
         return h('div', { class: `tt-tile ${answered ? 'answered' : 'self'}`, title: o.text, style: delay() },
           asked && answered ? h('div', { class: 'tt-ask', title: asked.item }, icon(asked.lens), h('span', {}, h('b', {}, lenses[asked.lens] ?? ''), asked.item)) : null,
-          h('span', { class: 'tt-branch', 'aria-hidden': 'true' }), h('span', { class: 'tt-leaf', 'aria-hidden': 'true' }), h('div', { class: 'tt-sq' }, o.recalls ? '💡 ' : '', o.text),
+          h('span', { class: 'tt-branch', 'aria-hidden': 'true' }), answered ? null : h('span', { class: 'tt-sprout', 'aria-hidden': 'true' }, '🌱'), h('div', { class: 'tt-sq' }, o.recalls ? '💡 ' : '', o.text),
           asked && !answered ? h('div', { class: 'tt-same', title: asked.item }, icon(asked.lens), `${lenses[asked.lens] ?? 'めんだこ'}も同じ所を見ていた`) : null);
       };
       const buds = c.items.filter((i) => i.status === 'ai');
@@ -552,9 +552,9 @@ function tileTrees(cycles, lenses = {}) {
         h('div', { class: 'tt-apple', style: `animation-delay:${top + 0.2}s` }, '🍏', h('small', {}, `自分で見つけた ${c.own.filter((o) => o.phase !== 'hint').length}／AIの指摘に答えた ${c.own.filter((o) => o.phase === 'hint').length}`)),
         // 芽の枠は最初から出しておく（後から出すと、木が伸びる間ずっと上が空いて見える）。
         buds.length ? h('div', { class: 'tt-buds' },
-          h('small', {}, h('b', {}, `🌱 芽＝めんだこだけが見た所 ${buds.length}`), '（あなたはまだ出せていない。次に考える所）'),
+          h('small', {}, h('b', {}, `種＝めんだこだけが見た所 ${buds.length}`), '（まだ芽吹いていない。次に考える所）'),
           buds.map((i) => h('div', { class: 'tt-bud', title: i.item }, icon(i.lens), h('span', {}, i.item)))) : null,
-        h('p', { class: 'tt-zone' }, h('b', {}, '🍃 葉＝あなたが先に考えたこと'), `（1枚＝1行、${c.own.length}枚）`),
+        h('p', { class: 'tt-zone' }, h('b', {}, '🌱 芽＝あなたが自分で芽吹かせた考え'), `（1枚＝1行、${c.own.length}枚）`),
         h('div', { class: 'tt-stack' }, h('span', { class: 'tt-trunk', 'aria-hidden': 'true', style: `--d:${start}s;--len:${Math.max(c.own.length, 1) * STEP}s` }), rows.reverse()),
         h('div', { class: 'tt-root' }, h('small', {}, '根＝題材'), c.project));
     })));
