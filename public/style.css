@@ -31,7 +31,12 @@ body {
 .tabs a { color: var(--accent-ink); text-decoration: none; padding: 6px 16px; border-radius: 99px; font-weight: 700; }
 .tabs a:hover { background: #ffffff26; }
 .tabs a[aria-current="page"] { background: var(--accent-ink); color: var(--accent-dark); }
-.tagline { font-family: var(--round); font-weight: 700; font-size: 16px; letter-spacing: .04em; }
+.tagline { font-family: var(--round); font-weight: 700; font-size: 16px; letter-spacing: .04em; min-width: 0; line-height: 1.4; }
+/* 幅が足りないときは、タブを下の行へ落とさず、キャッチを「、」の後ろで2行にする。 */
+.tagline > span { display: inline-block; }
+.tabs, .mode { flex-shrink: 0; }
+.tabs a { white-space: nowrap; }
+@media (min-width: 761px) { .top { flex-wrap: nowrap; } }
 @media (max-width: 760px) { .tagline { display: none; } }
 .brand { display: flex; align-items: center; gap: 10px; color: inherit; font-weight: 700; text-decoration: none; }
 .mode { background: var(--accent-tint); color: var(--accent-dark); border-radius: 4px; padding: 2px 10px; font-size: 13px; }
