@@ -34,6 +34,8 @@ main { max-width: 760px; margin: 0 auto; padding: 32px 16px 80px; }
 main.with-tree { max-width: 1240px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
 #app { min-width: 0; outline: none; }
 #tree[hidden] { display: none; }
+.manual-out { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.resume { border-color: #9cc3a6; background: #f4faf5; }
 .manual-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 10px; }
 .manual-pair textarea { width: 100%; }
 .manual-src { margin: 0; white-space: pre-wrap; max-height: 430px; overflow: auto; background: #faf8f2; border: 1px solid var(--line); border-radius: 8px; padding: 10px; font-family: inherit; font-size: 13px; line-height: 1.6; }

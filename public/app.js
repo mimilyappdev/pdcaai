@@ -189,7 +189,7 @@ async function home() {
   show(
     h('h1', {}, '「これで100点」を、\n話しながら110点へ。'),
     h('p', { class: 'lead' }, '一言ずつ話すだけで大丈夫です。話した内容は思考ツリーに育ち、Claudeの見立ては少し話してから開きます。'),
-    h('p', {}, h('a', { class: 'button', href: '#/stretch' }, 'ストレッチャーを呼ぶ'), ' ', h('a', { class: 'button ghost', href: '#/new' }, '話しはじめる'), ' ', h('a', { class: 'button ghost', href: '#/notebook' }, '観点帳を見る')),
+    h('p', {}, h('a', { class: 'button', href: '#/stretch' }, '引継ぎサポートめんだこを呼ぶ'), ' ', h('a', { class: 'button ghost', href: '#/new' }, '話しはじめる'), ' ', h('a', { class: 'button ghost', href: '#/notebook' }, '観点帳を見る')),
     ledger.due.length ? h('section', { class: 'card due' },
       h('h2', {}, '結果を確かめる日です'),
       h('ul', { class: 'list' }, ledger.due.map((d) => h('li', {},
@@ -635,9 +635,119 @@ function handoverTree(cycle) {
     left.length ? h('p', { class: 'muted' }, `まだ止まる場面: ${left.map((f) => `場面${f.j + 1}`).join('、')}`) : null);
 }
 
+// 書き出し。md はそのまま、テキストは記号を外し、Word は見出しを太字にした .docx をブラウザの中で組み立てる。
+function crc32(bytes) {
+  let c = -1;
+  for (const b of bytes) {
+    c ^= b;
+    for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xEDB88320 & -(c & 1));
+  }
+  return (c ^ -1) >>> 0;
+}
+
+function zipStore(files) {
+  const enc = new TextEncoder();
+  const parts = [];
+  const central = [];
+  let offset = 0;
+  for (const [name, text] of files) {
+    const n = enc.encode(name);
+    const d = enc.encode(text);
+    const crc = crc32(d);
+    const head = (sig, extra) => {
+      const b = new DataView(new ArrayBuffer(extra));
+      b.setUint32(0, sig, true);
+      return b;
+    };
+    const local = head(0x04034b50, 30 + n.length);
+    [[4, 20], [26, n.length]].forEach(([at, v]) => local.setUint16(at, v, true));
+    [[14, crc], [18, d.length], [22, d.length]].forEach(([at, v]) => local.setUint32(at, v, true));
+    new Uint8Array(local.buffer).set(n, 30);
+    const dir = head(0x02014b50, 46 + n.length);
+    [[4, 20], [6, 20], [28, n.length]].forEach(([at, v]) => dir.setUint16(at, v, true));
+    [[16, crc], [20, d.length], [24, d.length], [42, offset]].forEach(([at, v]) => dir.setUint32(at, v, true));
+    new Uint8Array(dir.buffer).set(n, 46);
+    parts.push(local, d);
+    central.push(dir);
+    offset += local.byteLength + d.length;
+  }
+  const size = central.reduce((a, b) => a + b.byteLength, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true);
+  [[8, files.length], [10, files.length]].forEach(([at, v]) => end.setUint16(at, v, true));
+  end.setUint32(12, size, true);
+  end.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, end], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+}
+
+function manualFile(md, format) {
+  const lines = md.split('\n');
+  if (format === 'md') return new Blob([md], { type: 'text/markdown' });
+  if (format === 'txt') return new Blob([lines.map((l) => l.replace(/^#+\s*/, '').replace(/^(\s*)[-*]\s+/, '$1・').replace(/\*\*/g, '')).join('\r\n')], { type: 'text/plain' });
+  const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const para = (line) => {
+    const m = line.match(/^(#+)\s*(.*)$/);
+    const text = esc((m ? m[2] : line.replace(/^(\s*)[-*]\s+/, '$1・')).replace(/\*\*/g, ''));
+    const size = m ? [36, 30, 26][Math.min(m[1].length, 3) - 1] : 22;
+    return `<w:p><w:r><w:rPr>${m ? '<w:b/>' : ''}<w:sz w:val="${size}"/></w:rPr><w:t xml:space="preserve">${text}</w:t></w:r></w:p>`;
+  };
+  const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  return zipStore([
+    ['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'],
+    ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'],
+    ['word/document.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="${W}"><w:body>${lines.map(para).join('')}</w:body></w:document>`],
+  ]);
+}
+
+// 引継ぎマニュアル（③の最後）: AIの清書を下書きにして、あなたが直して確定する。確定したら同じ仕事でもう一度試し、止まった数が変わらないかを見る。
+function manualSection(cycle, slots) {
+  const cycleId = cycle.id;
+  const manualBox = h('section', { 'aria-live': 'polite' });
+  const renderManual = (handover) => {
+    const c = handover.card;
+    const original = (c.doc != null || c.extra != null ? [c.doc, c.extra] : slots.map((s) => c[s.key])).filter(Boolean).join('\n\n');
+    const make = h('button', { type: 'button', class: handover.manual ? 'ghost' : null, onclick: async () => {
+      manualBox.replaceChildren(thinking('清書係のめんだこが、並べ替えて整えています（30秒ほど）'));
+      try {
+        renderManual((await api(`handover/${cycleId}/manual`, {})).handover);
+      } catch (ex) {
+        manualBox.replaceChildren(h('p', { class: 'error', role: 'alert' }, ex.message));
+      }
+    } }, handover.manual ? '清書し直す' : 'マニュアルにする');
+    if (!handover.manual) {
+      manualBox.replaceChildren(h('div', { class: 'card' }, h('h2', {}, '引継ぎマニュアルにする'),
+        h('p', { class: 'muted' }, 'AIがするのは、並べ替え・見出し付け・言い回しの整えだけです。書いていないことは足しません。'), make));
+      return;
+    }
+    const format = h('select', { 'aria-label': '書き出す形式' }, [['md', 'Markdown（.md）'], ['txt', 'テキスト（.txt）'], ['docx', 'Word（.docx）']].map(([v, t]) => h('option', { value: v }, t)));
+    const area = h('textarea', { rows: 18, maxlength: 16000, value: handover.manual, 'aria-label': '整えた下書き' });
+    const tested = handover.tests.filter((t) => t.source === 'manual').at(-1);
+    const before = handover.tests.filter((t) => t.source !== 'manual' && t.scenes !== 'unseen').at(-1);
+    manualBox.replaceChildren(h('div', { class: 'card' },
+      h('h2', {}, '引継ぎマニュアル'),
+      h('p', { class: 'muted' }, '左があなたの文、右が整えた下書きです。右を直してから確定してください。'),
+      h('div', { class: 'manual-pair' },
+        h('div', {}, h('small', {}, 'あなたの文（資料＋追記）'), h('pre', { class: 'manual-src' }, original)),
+        h('div', {}, h('small', {}, '整えた下書き（直せます）'), area)),
+      tested ? h('p', { class: 'stuck-trend' }, `マニュアルで試した結果: ${tested.stuck} / ${tested.results.length} で止まった（カードのとき ${before?.stuck ?? '−'}）`) : null,
+      form(async () => {
+        manualBox.append(thinking('後任めんだこが、マニュアルだけを読んで同じ仕事を試しています（30秒ほど）'));
+        const out = await api(`handover/${cycleId}/manual/test`, { manual: area.value });
+        renderManual(out.handover);
+      }, h('button', { type: 'submit' }, '確定して、後任めんだこに試してもらう')),
+      h('p', { class: 'manual-out' }, make, ' ', format, h('a', { class: 'button ghost', href: '#', onclick: (e) => {
+        const ext = format.value;
+        e.currentTarget.download = `引継ぎマニュアル_${cycle.project}.${ext}`;
+        e.currentTarget.href = URL.createObjectURL(manualFile(area.value, ext));
+      } }, '書き出す'))));
+  };
+  renderManual(cycle.handover);
+  return manualBox;
+}
+
 async function notebookView() {
   setChain([]);
-  const { cycles, stats, hints, lenses, humanOnly, reunions } = await api('notebook');
+  const { cycles, stats, hints, lenses, humanOnly, reunions, slots } = await api('notebook');
   drawGrowthTree([], lenses);
   document.getElementById('shell').classList.toggle('wide', cycles.length > 0);
   const pctText = (v) => (v == null ? '-' : `${v}%`);
@@ -647,6 +757,7 @@ async function notebookView() {
     cycles.length ? null : h('p', { class: 'muted' }, 'まだ記録はありません。Claude Code で pdcaai スキルを使うと、ここに積まれます。'),
     cycles.length ? tileTrees(cycles, lenses) : null,
     ...cycles.map(handoverTree),
+    ...cycles.filter((c) => c.handover?.tests?.length).slice(-1).map((c) => manualSection(c, slots)),
     stats.length ? cycleBars(stats) : null,
     stats.length ? growthTable(stats, lenses, reunions) : null,
     stats.length ? h('section', { class: 'card' },
@@ -746,10 +857,21 @@ function docField(label, name, max) {
     h('span', { class: 'doc-pick' }, h('button', { type: 'button', class: 'ghost', onclick: () => pick.click() }, '資料をアップロード'), pick, status));
 }
 
-function stretchView() {
+async function stretchView() {
   setChain([]);
+  // ①に戻ってきたとき、前に回した題材が消えたように見えないよう、続きの入口と「この資料でもう一度」を出す。
+  const { cycles } = await api('notebook').catch(() => ({ cycles: [] }));
+  const last = cycles.at(-1);
+  const again = () => {
+    document.querySelector('input[name=project]').value = last.project;
+    document.querySelector('textarea[name=summary]').value = last.summary ?? '';
+  };
   show(
-    h('h1', {}, 'ストレッチャーを呼ぶ'),
+    h('h1', {}, '引継ぎサポートめんだこを呼ぶ'),
+    last ? h('section', { class: 'card resume' }, h('h2', {}, `前回の題材: ${last.project}`, h('span', { class: 'muted' }, ` ${day(last.createdAt)}`)),
+      h('p', { class: 'muted' }, '記録は残っています。続きから進めるか、同じ資料でもう一度めんだこを呼べます。'),
+      h('p', {}, h('a', { class: 'button', href: `#/handover/${last.id}` }, '②引き継ぐの続きへ'), ' ', h('a', { class: 'button ghost', href: '#/notebook' }, '③伸びを見る'), ' ',
+        h('button', { type: 'button', class: 'ghost', onclick: again }, 'この資料で、もう一度呼ぶ'))) : null,
     h('p', { class: 'lead' }, 'PDCAIで引き継ぎの抜け漏れを防いで、思考力を上げよう！'),
     h('p', {}, '「資料できた！」と思ったら、めんだこAI達を呼びます。自分でも足りないものを考えて、仕事を引き継いだめんだこ達がこの資料で動けたか見てみましょう。'),
     form(async (v) => {
@@ -761,7 +883,7 @@ function stretchView() {
     field('作るもの', 'project', { hint: '例：カフェの予約の方法' }),
     docField('いつもの流れ', 'summary', 8000),
     percentField('今の自信（%）', 'confidence', 80, 0),
-    h('button', { type: 'submit' }, 'ストレッチャー登場')),
+    h('button', { type: 'submit' }, 'めんだこ登場')),
   );
 }
 
@@ -889,44 +1011,7 @@ async function handoverView(cycleId) {
         r.missing ? h('div', {}, `足りない1行: ${r.missing}`) : null))),
       last.stuck && last.stuck === right(last) ? h('p', {}, '残りは、前任者に聞くのが正しい場面です。カードで決めることは、ここまでです。')
         : last.stuck ? h('p', { class: 'muted' }, 'カードに書き足して、もう一度試してください。書くのはあなたの言葉です。') : h('p', {}, '後任役のAIは、このカードだけで全部の仕事ができました。'),
-      h('p', {}, download)));
-  };
-  // 引継ぎマニュアル: AIの清書を下書きにして、あなたが直して確定する。確定したら同じ仕事でもう一度試し、止まった数が変わらないかを見る。
-  const manualBox = h('section', { 'aria-live': 'polite' });
-  const renderManual = (handover) => {
-    const c = handover.card;
-    const original = (c.doc != null || c.extra != null ? [c.doc, c.extra] : slots.map((s) => c[s.key])).filter(Boolean).join('\n\n');
-    const make = h('button', { type: 'button', class: handover.manual ? 'ghost' : null, onclick: async () => {
-      manualBox.replaceChildren(thinking('清書係のめんだこが、並べ替えて整えています（30秒ほど）'));
-      try {
-        renderManual((await api(`handover/${cycleId}/manual`, {})).handover);
-      } catch (ex) {
-        manualBox.replaceChildren(h('p', { class: 'error', role: 'alert' }, ex.message));
-      }
-    } }, handover.manual ? '清書し直す' : 'マニュアルにする');
-    if (!handover.manual) {
-      manualBox.replaceChildren(h('div', { class: 'card' }, h('h2', {}, '引継ぎマニュアルにする'),
-        h('p', { class: 'muted' }, 'AIがするのは、並べ替え・見出し付け・言い回しの整えだけです。書いていないことは足しません。'), make));
-      return;
-    }
-    const area = h('textarea', { rows: 18, maxlength: 16000, value: handover.manual, 'aria-label': '整えた下書き' });
-    const tested = handover.tests.filter((t) => t.source === 'manual').at(-1);
-    const before = handover.tests.filter((t) => t.source !== 'manual' && t.scenes !== 'unseen').at(-1);
-    manualBox.replaceChildren(h('div', { class: 'card' },
-      h('h2', {}, '引継ぎマニュアル'),
-      h('p', { class: 'muted' }, '左があなたの文、右が整えた下書きです。右を直してから確定してください。'),
-      h('div', { class: 'manual-pair' },
-        h('div', {}, h('small', {}, 'あなたの文（資料＋追記）'), h('pre', { class: 'manual-src' }, original)),
-        h('div', {}, h('small', {}, '整えた下書き（直せます）'), area)),
-      tested ? h('p', { class: 'stuck-trend' }, `マニュアルで試した結果: ${tested.stuck} / ${tested.results.length} で止まった（カードのとき ${before?.stuck ?? '−'}）`) : null,
-      form(async () => {
-        manualBox.append(thinking('後任めんだこが、マニュアルだけを読んで同じ仕事を試しています（30秒ほど）'));
-        const out = await api(`handover/${cycleId}/manual/test`, { manual: area.value });
-        renderResults(out.handover);
-        renderManual(out.handover);
-      }, h('button', { type: 'submit' }, '確定して、後任めんだこに試してもらう')),
-      h('p', {}, make, ' ', h('a', { class: 'button ghost', download: `引継ぎマニュアル_${cycle.project}.md`, href: '#',
-        onclick: (e) => { e.currentTarget.href = URL.createObjectURL(new Blob([area.value], { type: 'text/markdown' })); } }, 'マニュアルを書き出す（.md）'))));
+      h('p', {}, download, ' ', h('a', { class: 'button', href: '#/notebook' }, '③伸びを見るで、マニュアルにする'))));
   };
   show(
     h('h1', {}, `引継ぎカード: ${cycle.project}`),
@@ -935,13 +1020,10 @@ async function handoverView(cycleId) {
       results.replaceChildren(thinking('後任役のAIが、カードだけを読んで仕事を試しています（30秒ほど）'));
       const out = await api(`handover/${cycleId}`, { card: v });
       renderResults(out.handover);
-      renderManual(out.handover);
     }, rows[0], cycle.items.length ? h('p', {}, hintButton) : null, hints, rows[1], h('button', { type: 'submit' }, '後任めんだこに試してもらう')),
     results,
-    manualBox,
   );
   if (cycle.handover) renderResults(cycle.handover);
-  if (cycle.handover?.tests?.length) renderManual(cycle.handover);
 }
 
 function tabOf(hash) {
@@ -969,9 +1051,9 @@ async function router() {
     else if (hash === '#/ledger') await home();
     else if (hash === '#/new') newSession();
     else if (hash === '#/notebook') await notebookView();
-    else if (hash === '#/stretch') stretchView();
+    else if (hash === '#/stretch') await stretchView();
     else if (m) await session(m[1]);
-    else stretchView();
+    else await stretchView();
   } catch (ex) {
     show(h('p', { class: 'error', role: 'alert' }, ex.message), h('a', { class: 'button ghost', href: '#/' }, '戻る'));
   }
