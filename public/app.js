@@ -887,7 +887,6 @@ async function stretchView() {
       h('p', { class: 'muted' }, '記録は残っています。続きから進めるか、同じ資料でもう一度めんだこを呼べます。'),
       h('p', {}, h('a', { class: 'button', href: `#/handover/${last.id}` }, '②引き継ぐの続きへ'), ' ', h('a', { class: 'button ghost', href: '#/notebook' }, '③伸びを見る'), ' ',
         h('button', { type: 'button', class: 'ghost', onclick: again }, 'この資料で、もう一度呼ぶ'))) : null,
-    h('p', { class: 'lead' }, 'PDCAIで引き継ぎの抜け漏れを防いで、思考力を上げよう！'),
     h('p', {}, '「資料できた！」と思ったら、めんだこAI達を呼びます。自分でも足りないものを考えて、仕事を引き継いだめんだこ達がこの資料で動けたか見てみましょう。'),
     form(async (v) => {
       app.append(thinking('めんだこたちが集まっています'));
