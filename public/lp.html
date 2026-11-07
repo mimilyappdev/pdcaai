@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDCAI — AIと共生しながら思考力を高める引継ぎアプリ</title>
+<meta name="description" content="引継ぎマニュアルを、AIの答えを見る前に自分で考える。めんだこのAI社員4人が見落としを指し、後任めんだこが実際に止まった所を返す。カードの中身はAIが書かない、引継ぎアプリ PDCAI。">
+<meta property="og:title" content="PDCAI — AIと共生しながら思考力を高める引継ぎアプリ">
+<meta property="og:description" content="引継ぎのAIツールはAIが書く。PDCAIは、カードの中身をAIは書かない。">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#B84E26">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
+<style>
+:root {
+  --paper: #f6f3ec;
+  --paper-alt: #efe9dc;
+  --card: #fffdf8;
+  --ink: #20241f;
+  --sub: #646a60;
+  --line: #d9d4c7;
+  --accent: #B84E26;
+  --accent-dark: #8F3A18;
+  --accent-tint: #F6DCCB;
+  --green: #2d6a4f;
+  --green-tint: #e4f1e8;
+  --indigo: #4f6a8f;
+  --seal: #2c3a33;
+  --seal-ink: #efe9da;
+  --round: "Zen Maru Gothic", "Yu Gothic UI", "Hiragino Maru Gothic ProN", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper); color: var(--ink);
+  font-family: "Noto Sans JP", "Yu Gothic UI", "Hiragino Sans", sans-serif;
+  font-size: 16px; line-height: 1.85; letter-spacing: .02em;
+  -webkit-font-smoothing: antialiased; overflow-x: hidden;
+}
+a { color: inherit; }
+img { max-width: 100%; height: auto; display: block; }
+h1, h2, h3, .btn, .eyebrow, .tag { font-family: var(--round); }
+
+/* ── HEADER ── */
+header.top {
+  position: sticky; top: 0; z-index: 50;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; gap: 16px;
+  padding: 8px 32px; min-height: 64px;
+}
+.brand { display: flex; align-items: center; gap: 14px; text-decoration: none; min-width: 0; }
+.brand img { height: 44px; width: auto; flex-shrink: 0; }
+.brand-copy { font-family: var(--round); font-weight: 700; font-size: 14px; line-height: 1.4; border-left: 1px solid #ffffff66; padding-left: 14px; }
+.top nav { margin-left: auto; display: flex; gap: 4px; align-items: center; }
+.top nav a { text-decoration: none; font-family: var(--round); font-weight: 700; font-size: 14px; padding: 6px 14px; border-radius: 99px; }
+.top nav a:hover { background: #ffffff26; }
+.top nav a.nav-cta { background: #fff; color: var(--accent-dark); }
+.top nav a.nav-cta:hover { background: var(--accent-tint); }
+
+/* ── COMMON ── */
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 32px; }
+section { padding: 96px 0; }
+.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .18em; color: var(--accent); text-transform: uppercase; margin-bottom: 14px; }
+.center { text-align: center; }
+.sec-title { font-size: 34px; line-height: 1.5; font-weight: 700; margin-bottom: 18px; }
+.sec-lead { color: var(--sub); max-width: 720px; margin: 0 auto 56px; }
+.btn {
+  display: inline-block; text-decoration: none; font-weight: 700; font-size: 15px;
+  padding: 13px 30px; border-radius: 99px; border: 2px solid var(--accent);
+  transition: transform .15s, box-shadow .15s, background .15s;
+}
+.btn-primary { background: var(--accent); color: #fff; box-shadow: 0 3px 0 var(--accent-dark); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 0 var(--accent-dark); }
+.btn-ghost { background: #fff; color: var(--accent-dark); }
+.btn-ghost:hover { background: var(--accent-tint); }
+.note { font-size: 13px; color: var(--sub); }
+.tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 12px; border-radius: 99px; background: var(--accent-tint); color: var(--accent-dark); }
+.shot { background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: 0 14px 44px rgba(32,36,31,.12); }
+.fic { font-size: 12px; color: var(--sub); margin-top: 10px; }
+
+/* ── HERO ── */
+.hero { padding: 88px 0 80px; }
+.hero .wrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; }
+.hero h1 { font-size: 50px; line-height: 1.35; font-weight: 900; color: var(--ink); margin-bottom: 18px; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero-sub { font-family: var(--round); font-weight: 700; font-size: 21px; line-height: 1.6; margin-bottom: 20px; }
+.hero-desc { color: var(--sub); margin-bottom: 32px; }
+.cta-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.hero-vis { position: relative; }
+.hero-vis .shot { transform: rotate(-1.5deg); transition: transform .4s cubic-bezier(.34,1.56,.64,1); }
+.hero-vis .shot img { width: 100%; max-height: 560px; object-fit: cover; object-position: top; }
+.hero-vis .shot:hover { transform: rotate(0) scale(1.01); }
+.hero-vis .bob { position: absolute; width: 120px; right: -18px; bottom: -36px; animation: bob 1.6s ease-in-out infinite; }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@media (prefers-reduced-motion: reduce) { .hero-vis .bob { animation: none; } }
+
+/* ── PAIN ── */
+.pain { background: var(--paper-alt); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.pcard { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 28px 24px; position: relative; overflow: hidden; }
+.pcard::before { content: ""; position: absolute; inset: 0 0 auto; height: 4px; background: var(--accent); opacity: .55; }
+.pcard .ic { font-size: 30px; margin-bottom: 10px; }
+.pcard h3 { font-size: 17px; margin-bottom: 8px; line-height: 1.5; }
+.pcard p { font-size: 14px; color: var(--sub); }
+
+/* ── THOUGHT ── */
+.thought .wrap { display: grid; grid-template-columns: 300px 1fr; gap: 56px; align-items: center; }
+.thought-vis { text-align: center; }
+.thought-vis img { width: 240px; margin: 0 auto; }
+.roles { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+.thought h2 { font-size: 30px; line-height: 1.55; margin-bottom: 20px; }
+.thought p + p { margin-top: 14px; }
+.quote {
+  margin-top: 28px; background: var(--card); border: 1px solid var(--line); border-left: 6px solid var(--accent);
+  border-radius: 12px; padding: 20px 24px; font-family: var(--round); font-weight: 700; font-size: 18px; line-height: 1.7;
+}
+.quote small { display: block; font-family: "Noto Sans JP", sans-serif; font-weight: 400; font-size: 13px; color: var(--sub); margin-top: 6px; }
+
+/* ── HOW ── */
+.how { background: var(--card); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.feat-list { display: flex; flex-direction: column; gap: 88px; }
+.feat { display: grid; grid-template-columns: 1fr 1.1fr; gap: 56px; align-items: center; }
+.feat.rev > .feat-text { order: 2; }
+.step-no { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.step-no b { font-family: var(--round); font-size: 15px; background: var(--accent); color: #fff; border-radius: 99px; padding: 3px 14px; }
+.feat h3 { font-size: 26px; line-height: 1.5; margin-bottom: 14px; }
+.feat-text > p { color: var(--sub); margin-bottom: 16px; }
+.points { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.points li { position: relative; padding-left: 26px; font-size: 15px; }
+.points li::before { content: ""; position: absolute; left: 4px; top: .7em; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.mendako-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 18px; }
+.mendako-row figure { text-align: center; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 10px 6px 8px; }
+.mendako-row img { width: 72px; margin: 0 auto 4px; }
+.mendako-row figcaption { font-family: var(--round); font-weight: 700; font-size: 13px; line-height: 1.4; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 14px; font-size: 14px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ── NUMBERS ── */
+.nums .grid3 { margin-bottom: 18px; }
+.num { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 28px 24px; text-align: center; }
+.num .big { font-family: var(--round); font-weight: 900; font-size: 46px; color: var(--accent); line-height: 1.2; }
+.num .big small { font-size: 20px; color: var(--ink); }
+.num .seq { font-family: var(--round); font-weight: 900; font-size: 30px; color: var(--accent); line-height: 1.3; }
+.num h3 { font-size: 16px; margin: 10px 0 6px; }
+.num p { font-size: 13px; color: var(--sub); }
+.num .src { margin-top: 10px; font-size: 12px; color: var(--sub); border-top: 1px dashed var(--line); padding-top: 8px; }
+.honest { max-width: 820px; margin: 30px auto 0; font-size: 14px; color: var(--sub); background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px 22px; }
+.honest b { color: var(--ink); }
+
+/* ── USES ── */
+.uses .grid3 { grid-template-columns: repeat(3, 1fr); }
+.use { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+.use h3 { font-size: 17px; margin: 8px 0 6px; }
+.use p { font-size: 14px; color: var(--sub); }
+.use .tag.soon { background: #e8e5dd; color: var(--sub); }
+
+/* ── CLAUDE ── */
+.claude { background: var(--seal); color: var(--seal-ink); }
+.claude .eyebrow { color: #f0b597; }
+.claude .sec-lead { color: #c9c3b3; }
+.flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; position: relative; }
+.flow > div { background: #ffffff12; border: 1px solid #ffffff2a; border-radius: 14px; padding: 22px 18px; }
+.flow .k { font-family: var(--round); font-weight: 900; font-size: 13px; letter-spacing: .1em; color: #f0b597; }
+.flow h3 { font-size: 17px; color: #fff; margin: 6px 0 8px; line-height: 1.5; }
+.flow p { font-size: 13px; color: #d8d2c2; }
+.install { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+.install > *, .feat > *, .hero .wrap > * { min-width: 0; }
+.install pre { background: #00000040; border: 1px solid #ffffff22; border-radius: 12px; padding: 16px 18px; font-size: 13px; line-height: 1.7; overflow-x: auto; color: #fff; }
+.install ol { padding-left: 1.3em; font-size: 14px; color: #d8d2c2; }
+.install ol li + li { margin-top: 6px; }
+
+/* ── FINAL CTA ── */
+.fcta { text-align: center; }
+.fcta img { width: 130px; margin: 0 auto 18px; }
+.fcta h2 { font-size: 40px; line-height: 1.45; margin-bottom: 14px; }
+.fcta p { color: var(--sub); margin-bottom: 32px; }
+.fcta .cta-row { justify-content: center; }
+
+/* ── FOOTER ── */
+footer { border-top: 1px solid var(--line); background: var(--card); padding: 28px 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+footer .fl { display: flex; align-items: center; gap: 12px; }
+footer .fl img { height: 30px; width: auto; }
+footer .links { display: flex; gap: 20px; flex-wrap: wrap; font-size: 13px; color: var(--sub); }
+footer .links a { text-decoration: none; }
+footer .links a:hover { color: var(--accent-dark); }
+footer .copy { font-size: 12px; color: var(--sub); }
+
+/* ── FADE ── */
+.fade { opacity: 0; transform: translateY(20px); transition: opacity .6s ease, transform .6s ease; }
+.fade.visible { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .fade { opacity: 1; transform: none; transition: none; } }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  header.top { padding: 8px 16px; flex-wrap: wrap; }
+  .top nav a:not(.nav-cta) { display: none; }
+  .wrap { padding: 0 16px; }
+  section { padding: 64px 0; }
+  .hero { padding: 48px 0 64px; }
+  .hero .wrap, .thought .wrap, .feat, .install { grid-template-columns: 1fr; gap: 36px; }
+  .feat.rev > .feat-text { order: 0; }
+  .hero h1 { font-size: 36px; }
+  .hero-sub { font-size: 18px; }
+  .hero-vis .bob { width: 88px; right: -4px; bottom: -28px; }
+  .grid3, .uses .grid3 { grid-template-columns: 1fr; }
+  .flow { grid-template-columns: 1fr 1fr; }
+  .sec-title { font-size: 27px; }
+  .sec-lead { margin-bottom: 36px; }
+  .thought h2 { font-size: 24px; }
+  .thought-vis img { width: 170px; }
+  .feat-list { gap: 64px; }
+  .feat h3 { font-size: 22px; }
+  .fcta h2 { font-size: 28px; }
+  footer { padding: 24px 16px; flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 560px) {
+  .brand img { height: 36px; }
+  .brand-copy { font-size: 12px; padding-left: 10px; }
+  .top nav { margin-left: 0; width: 100%; justify-content: flex-end; margin-top: -4px; }
+  .top nav a.nav-cta { font-size: 13px; padding: 4px 12px; }
+  .hero h1 { font-size: 30px; }
+  .flow { grid-template-columns: 1fr; }
+  .mendako-row { grid-template-columns: repeat(2, 1fr); }
+  .num .big { font-size: 40px; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a class="brand" href="#top">
+    <img src="img/logo-white.png" alt="PDCAI Not just AI. Think with it." width="938" height="303">
+    <span class="brand-copy">AIと共生しながら<br>思考力を高める引継ぎアプリ</span>
+  </a>
+  <nav aria-label="ページ内">
+    <a href="#thought">思い</a>
+    <a href="#how">使い方</a>
+    <a href="#claude">Claude</a>
+    <a class="nav-cta" href="https://github.com/mimilyappdev/pdcaai">GitHub →</a>
+  </nav>
+</header>
+
+<main id="top">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow">Built with Claude: Japan 2026</p>
+      <h1>AIだけじゃ、<br><em>ダメですか？！</em></h1>
+      <p class="hero-sub">引継ぎマニュアルを、<br>AIの答えを見る前に、自分で考える。</p>
+      <p class="hero-desc">
+        引き継ぎたい仕事を入れたら、まず自分で「足りないこと」を書く。めんだこのAI社員4人が見落としを指し、後任めんだこがあなたの資料だけを読んで、実際に止まった所を返します。<br>
+        カードを埋めるのは、あなたの言葉です。
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#how">使い方を見る</a>
+        <a class="btn btn-ghost" href="https://github.com/mimilyappdev/pdcaai">GitHub で見る</a>
+      </div>
+      <p class="note" style="margin-top:12px;">オープンソース（MIT）・Claude Code プラグインとWeb画面</p>
+    </div>
+    <div class="hero-vis">
+      <div class="shot"><img src="img/lp/step2.jpg" alt="②引き継ぐの画面。後任めんだこが8場面中1つで止まった" width="1092" height="1290"></div>
+      <p class="fic">架空の店の例｜書き手・店長役はAI</p>
+      <img class="bob" src="img/mendako-plain.png" alt="" width="892" height="708">
+    </div>
+  </div>
+</section>
+
+<!-- PAIN -->
+<section class="pain">
+  <div class="wrap">
+    <p class="eyebrow center">Problem</p>
+    <h2 class="sec-title center">引継ぎで、こんなこと<br>ありませんか？</h2>
+    <p class="sec-lead center">AIに頼めば、引継ぎマニュアルは数秒できれいに仕上がります。でも、それで後任は動けるでしょうか。</p>
+    <div class="grid3">
+      <div class="pcard fade">
+        <div class="ic">📄</div>
+        <h3>きれいなのに、後任が止まる</h3>
+        <p>AIだけで作ったマニュアルは、見た目は整っています。でも、作者が自分の実際の業務で試すと、10場面中6場面で後任役が止まりました。</p>
+      </div>
+      <div class="pcard fade">
+        <div class="ic">💭</div>
+        <h3>大事な判断は、頭の中にある</h3>
+        <p>「この場合はこうする」「ここは店長に聞く」。言葉にしていない判断は、AIにも書けません。書かれていない所で、人は止まります。</p>
+      </div>
+      <div class="pcard fade">
+        <div class="ic">🎈</div>
+        <h3>「できたつもり」がふくらむ</h3>
+        <p>AIと作ると、完成物はすぐ増えます。80%できたと思ったら、実は40%だった──作者自身が何度も味わった実感です。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- THOUGHT -->
+<section class="thought" id="thought">
+  <div class="wrap">
+    <div class="thought-vis fade">
+      <img src="img/mendako-thinking.png" alt="考えているめんだこ" width="952" height="729">
+      <div class="roles">
+        <span class="tag">会社員</span><span class="tag">イラスト・デザイン</span><span class="tag">開発</span>
+      </div>
+    </div>
+    <div class="fade">
+      <p class="eyebrow">Why I made this</p>
+      <h2>AIに出せない人間の思考を増やして、<br>AIと共生したい。</h2>
+      <p>作者は、会社員、イラスト・デザイン、開発の三足のわらじを履いています。AIが絵もデザインも作れる今、AIに任せるほど、自分で考える場面は減っていきます。</p>
+      <p>それでも、AIをやめたいわけではありません。AIは見落としを指してくれるし、試しに動いてもくれる。だから、<b>先に自分で考えて、そのあとでAIと突き合わせる</b>順番にしました。AIの答えを見る前に自分で判断すると、AIの間違いに流されにくくなった、という研究もあります（Buçinca ほか 2021）。</p>
+      <p>名前の PDCAI は、P・D・C・A ＋ AI。引継ぎを作るたびに一周して、自分で気づける所を少しずつ広げていくための道具です。</p>
+      <div class="quote">
+        引継ぎのAIツールは、AIが書く。<br>PDCAIは、カードの中身をAIは書かない。
+        <small>AIがするのは、見落としを指すこと、読んで止まった所を返すこと、清書で並べ替えて整えることだけ。</small>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section class="how" id="how">
+  <div class="wrap">
+    <p class="eyebrow center">How it works</p>
+    <h2 class="sec-title center">3つのタブで、<br>引継ぎを一周する</h2>
+    <p class="sec-lead center">①洗い出す → ②引き継ぐ → ③伸びを見る。最後に、引継ぎマニュアルとして書き出せます。</p>
+
+    <div class="feat-list">
+
+      <div class="feat fade">
+        <div class="feat-text">
+          <div class="step-no"><b>①</b><span class="tag">洗い出す</span></div>
+          <h3>引継ぎサポートめんだこを呼ぶ</h3>
+          <p>作るものと、いつもの流れを入れます。文章を貼るか、.txt・.md・.docx のファイルを読み込めます。</p>
+          <ul class="points">
+            <li><b>AIの答えを見る前に</b>、自分で「足りないこと」を書く</li>
+            <li>そのあいだに、めんだこのAI社員4人がそれぞれの立場で洗い出す</li>
+            <li>カードをめくって突き合わせると、「自分だけが気づいたこと」と「めんだこだけが気づいたこと」が分かれる</li>
+          </ul>
+          <div class="mendako-row">
+            <figure><img src="img/mendako-first-timer.png" alt="" width="952" height="729"><figcaption>新入社員</figcaption></figure>
+            <figure><img src="img/mendako-breaker.png" alt="" width="952" height="729"><figcaption>法務・<br>リスク管理</figcaption></figure>
+            <figure><img src="img/mendako-money-ops.png" alt="" width="952" height="729"><figcaption>財務</figcaption></figure>
+            <figure><img src="img/mendako-misreading.png" alt="" width="952" height="729"><figcaption>ユーザー</figcaption></figure>
+          </div>
+        </div>
+        <div>
+          <div class="shot"><img src="img/lp/step1.jpg" alt="①の画面。作るものといつもの流れを入れる" width="1200" height="1080" loading="lazy"></div>
+          <p class="fic">画面の例は架空のカフェです（書き手・店長役はAI）。</p>
+        </div>
+      </div>
+
+      <div class="feat rev fade">
+        <div class="feat-text">
+          <div class="step-no"><b>②</b><span class="tag">引き継ぐ</span></div>
+          <h3>後任めんだこが、<br>あなたの資料だけで試す</h3>
+          <p>①の資料と追記を、後任めんだこがそのまま読んで、よくある仕事を試します。判断できずに手が止まったら「止まった」と数えます。</p>
+          <ul class="points">
+            <li>止まった所には、何が書いていなかったか＝<b>「足りない1行」</b>が出る</li>
+            <li>答えは「追記」に、あなたの言葉で書き足す</li>
+            <li>書く手が止まったら「ヒントを出す」で、①のめんだこの指摘を見返せる</li>
+            <li>前任者に聞くのが正解の場面は「止まって正しい」と分けて出す</li>
+          </ul>
+        </div>
+        <div>
+          <div class="shot"><img src="img/lp/step2.jpg" alt="②の画面。後任AIテストで止まった数" width="1092" height="1290" loading="lazy"></div>
+          <p class="fic">架空の店｜書き手・店長役はAI、後輩役（人間の初見テスト）は作者本人。</p>
+        </div>
+      </div>
+
+      <div class="feat fade">
+        <div class="feat-text">
+          <div class="step-no"><b>③</b><span class="tag">伸びを見る</span></div>
+          <h3>考えた跡が、<br>一本の木になる</h3>
+          <p>①で、AIの答えを見る前にあなたが書いたことの記録です。周回を重ねるほど、幹が上へ伸びていきます。</p>
+          <ul class="points">
+            <li>幹1本の「思考の木」。🌱＝あなたが自分で芽吹かせた考え</li>
+            <li>種＝まだめんだこだけが見た所。次に考える場所</li>
+            <li>「引継ぎの木」では、止まった → 店長に聞いた → 書き足した、を場面ごとにたどれる</li>
+            <li>自分で出せるようになった観点から、<b>めんだこ達のサポートが外れていく</b></li>
+          </ul>
+        </div>
+        <div>
+          <div class="shot"><img src="img/lp/step3-tree.jpg" alt="③の思考の木" loading="lazy"></div>
+          <p class="fic">画面の例は架空のカフェです。</p>
+        </div>
+      </div>
+
+      <div class="feat rev fade">
+        <div class="feat-text">
+          <div class="step-no"><b>＋</b><span class="tag">引継ぎマニュアル</span></div>
+          <h3>清書は、並べ替えと整えだけ</h3>
+          <p>③の最後で、資料と追記を引継ぎマニュアルにします。左があなたの文、右が整えた下書き。</p>
+          <ul class="points">
+            <li>AIがするのは並べ替えと整えだけ。中身は足さない</li>
+            <li>右をあなたが直して、確定する</li>
+            <li>確定したマニュアルで、同じ仕事をもう一度試し、カードのときと止まった数を比べる</li>
+            <li>Word・テキスト・md で書き出せる</li>
+          </ul>
+        </div>
+        <div>
+          <div class="shot"><img src="img/lp/manual.jpg" alt="引継ぎマニュアルの画面。左が本人の文、右が整えた下書き" loading="lazy"></div>
+          <p class="fic">画面の例は架空のカフェです。</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- NUMBERS -->
+<section class="nums">
+  <div class="wrap">
+    <p class="eyebrow center">What happened</p>
+    <h2 class="sec-title center">止まった数で、<br>引継ぎの足りなさが見える</h2>
+    <p class="sec-lead center">「いい感じ」ではなく、後任が何場面で止まったかを数えます。</p>
+    <div class="grid3">
+      <div class="num fade">
+        <div class="big">6<small> / 10場面</small></div>
+        <h3>AIだけで作ったマニュアル</h3>
+        <p>作者の実際の業務で、AIだけで作ったマニュアルを後任役が読むと、10場面中6場面で止まりました。</p>
+        <div class="src">作者本人の業務（中身は非公開）</div>
+      </div>
+      <div class="num fade">
+        <div class="seq">5→4→3→2→2→2→0</div>
+        <h3>練習の8場面で、止まった数</h3>
+        <p>AIだけのマニュアルは5。カードにして、止まった所を書き足すたびに減りました。最後の2つは、店長がまだ決めていないことでした。</p>
+        <div class="src">架空の店｜書き手・店長役はAI。同じ場面で再テスト・各1回</div>
+      </div>
+      <div class="num fade">
+        <div class="big">3<small> と </small>3</div>
+        <h3>初めての8場面：人間とAI</h3>
+        <p>初めて見る8場面を、後輩役の作者と後任めんだこが試すと、どちらも3つで止まりました。止まったのは、まったく同じ場面でした。</p>
+        <div class="src">後輩役は作者本人（1人・1回）、場面はAIが作成</div>
+      </div>
+    </div>
+    <p class="honest fade"><b>正直なところ：</b>PDCAIは「先に自分で考える」「AIの答えを見る前に判断する」ことについての研究をもとに設計しましたが、PDCAIを使うと思考力が伸びるかどうかは、まだ検証していません。上の数字は、作者1人の試行です。</p>
+  </div>
+</section>
+
+<!-- USES -->
+<section class="uses" style="background:var(--paper-alt);border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
+  <div class="wrap">
+    <p class="eyebrow center">Use cases</p>
+    <h2 class="sec-title center">PDCAIで、できること</h2>
+    <p class="sec-lead center">引継ぎから始めましたが、「これで完成」と思った瞬間に一度立ち止まる道具として、ほかの場面にも使えます。</p>
+    <div class="grid3">
+      <div class="use fade">
+        <span class="tag">いま使える</span>
+        <h3>仕事を人やAIに引き継ぐ</h3>
+        <p>異動・退職・休み・新人へ。いつもの流れから、後任が止まらない引継ぎマニュアルを作る。</p>
+      </div>
+      <div class="use fade">
+        <span class="tag">いま使える</span>
+        <h3>「これで完成」の前に</h3>
+        <p>Claude Code で「これで作って」「完成」と打つと、一度だけ声がかかる。作りかけのものを4人の立場で見直せる。</p>
+      </div>
+      <div class="use fade">
+        <span class="tag">いま使える</span>
+        <h3>自分の伸びを見る</h3>
+        <p>自分で出せた割合、前に見落とした型を次は自分で出せたか。周回ごとの記録が木と表に残る。</p>
+      </div>
+      <div class="use fade">
+        <span class="tag">いま使える</span>
+        <h3>AIに渡す前の下ごしらえ</h3>
+        <p>後任が人でもAIでも同じ。AIエージェントに仕事を任せる前に、書いていない判断を見つける。</p>
+      </div>
+      <div class="use fade">
+        <span class="tag soon">これから</span>
+        <h3>新しいことの検討</h3>
+        <p>事業やサービスのアイデアを、お金・リスク・使う人の立場で先に自分で洗い出す。</p>
+      </div>
+      <div class="use fade">
+        <span class="tag soon">これから</span>
+        <h3>ブラウザだけで使える形</h3>
+        <p>Claude Code やインストールなしで、誰でもすぐ試せる形をハッカソンのあとに作る予定です。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CLAUDE -->
+<section class="claude" id="claude">
+  <div class="wrap">
+    <p class="eyebrow center">Built with Claude</p>
+    <h2 class="sec-title center">Claude Code の上で、<br>めんだこ達が動いている</h2>
+    <p class="sec-lead center">Web画面のほかに、Claude Code のプラグインとしても動きます。目的ごとに、フック・スキル・サブエージェント・モデルを使い分けています。</p>
+    <div class="flow">
+      <div class="fade"><span class="k">HOOK</span><h3>「これで作って」で<br>一度だけ声をかける</h3><p>作り始める・仕上げる発言を見つけて、「先に気になる点を1つ挙げてみますか？」と聞きます。</p></div>
+      <div class="fade"><span class="k">SKILL</span><h3>先に本人が出す<br>手順を守る</h3><p>本人の検討事項を先に受け取り、めんだこの答えはあとで見せる。観点帳に積んで、ヒントを減らします。</p></div>
+      <div class="fade"><span class="k">SUBAGENTS ×4</span><h3>めんだこ4人が<br>並列で洗い出す</h3><p>新入社員・法務リスク管理・財務・ユーザー。本人の答えは見ずに、それぞれ最大3つ。</p></div>
+      <div class="fade"><span class="k">後任役 CLAUDE</span><h3>カードだけを読んで<br>仕事を試す</h3><p>資料に書いていないことは推測せず、止まった所と「足りない1行」を返します。</p></div>
+    </div>
+    <div class="install">
+      <div>
+        <h3 style="font-size:18px;color:#fff;margin-bottom:10px;">プラグインを入れる</h3>
+<pre>claude plugin marketplace add mimilyappdev/pdcaai
+claude plugin install pdcaai@pdcaai</pre>
+      </div>
+      <ol>
+        <li><a href="https://claude.com/claude-code" style="color:#f0b597;">Claude Code</a> を入れる</li>
+        <li>左の2行でプラグインを入れる</li>
+        <li>引き継ぎたい仕事や作りかけのものについて「これで完成」「これで作って」と打つ</li>
+        <li>木や引継ぎカードの画面は、リポジトリで <code>npm start</code> して開く（手順は README）</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="fcta">
+  <div class="wrap">
+    <img src="img/mendako-plain.png" alt="" width="892" height="708">
+    <p class="eyebrow">Think with it</p>
+    <h2>AIだけじゃ、ダメですか？</h2>
+    <p>AIは見落としを指して、止まった所を返す。<br>埋めるのは、あなたの言葉です。</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://github.com/mimilyappdev/pdcaai">GitHub で見る →</a>
+      <a class="btn btn-ghost" href="#how">使い方をもう一度</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="fl">
+    <img src="img/logo-black.png" alt="PDCAI" width="938" height="303">
+    <span class="note">by Mimily</span>
+  </div>
+  <div class="links">
+    <a href="https://github.com/mimilyappdev/pdcaai">GitHub</a>
+    <a href="https://x.com/mimilydesign">X (@mimilydesign)</a>
+    <a href="https://note.com/mimilydesign">開発日記 (note)</a>
+  </div>
+  <p class="copy">© 2026 Mimily ・ MIT License</p>
+</footer>
+
+<script>
+const io = new IntersectionObserver((entries) => {
+  entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: .12 });
+document.querySelectorAll('.fade').forEach((el) => io.observe(el));
+</script>
+</body>
+</html>
